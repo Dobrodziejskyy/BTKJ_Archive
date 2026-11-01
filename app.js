@@ -139,7 +139,7 @@ document.addEventListener('click', event => {
 });
 
 const actors = [{
-  name: 'crisuuubtkj', role: 'pierwszoplanowa', initials: 'C',
+  name: 'crisuuubtkj', role: 'pierwszoplanowa', initials: 'C', image: './assets/images/pfp-crisuuubtkj.png',
   description: 'Magazynier, Legenda sceny mta, muzyk. Od niego wszystko się zaczęło.',
   detail: 'Pierwszy zapisany moment naszej społeczności jest związany z tym kanałem. Tutaj będziemy zbierać kolejne informacje i wspomnienia.',
   url: 'https://www.twitch.tv/crisuuubtkj'
@@ -153,7 +153,7 @@ function renderActors() {
   for (const actor of results) {
     const card = document.createElement('article');
     card.className = 'actor-card featured-actor';
-    card.innerHTML = `<details><summary><span class="actor-avatar" aria-hidden="true">${actor.initials}</span><span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p><a class="actor-link" href="${actor.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span> Profil (Twitch) ↗</a></div></details>`;
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p><a class="actor-link" href="${actor.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span> Profil (Twitch) ↗</a></div></details>`;
     container.append(card);
   }
   if (!results.length) {
