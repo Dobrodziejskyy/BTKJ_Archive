@@ -144,7 +144,7 @@ const actors = [{
   detail: 'Pierwszy zapisany moment naszej społeczności jest związany z tym kanałem. Tutaj będziemy zbierać kolejne informacje i wspomnienia.',
   url: 'https://www.twitch.tv/crisuuubtkj'
 }, {
-  name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D',
+  name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
   description: 'Wkrótce.', detail: 'Wkrótce.'
 }];
 function renderActors() {
