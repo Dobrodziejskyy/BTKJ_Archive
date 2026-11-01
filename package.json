@@ -1,0 +1,6 @@
+{
+  "name": "btkj-drl-archive",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "node server.mjs", "start": "node server.mjs", "check": "node --check server.mjs && node --check app.js" }
+}
