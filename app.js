@@ -197,3 +197,32 @@ document.querySelectorAll('dialog').forEach(dialog => {
     startedOutside = false;
   });
 });
+
+// Add confirmed records with status "done" or "failed" and resolvedAt YYYY-MM-DD.
+const promises = [];
+function calculatePromiseBalance(records, now = new Date()) {
+  const end = now.toISOString().slice(0, 10);
+  const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 6, 1));
+  month.setUTCDate(Math.min(now.getUTCDate(), new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0)).getUTCDate()));
+  const start = month.toISOString().slice(0, 10);
+  const summarize = rows => {
+    const done = rows.filter(row => row.status === 'done').length;
+    const failed = rows.filter(row => row.status === 'failed').length;
+    const total = done + failed;
+    return {done, failed, total, percent: total ? Math.round(done / total * 100) : null};
+  };
+  return {all: summarize(records), recent: summarize(records.filter(row => row.resolvedAt >= start && row.resolvedAt <= end))};
+}
+const promiseBalances = calculatePromiseBalance(promises);
+document.querySelectorAll('[data-balance]').forEach(card => {
+  const balance = promiseBalances[card.dataset.balance];
+  card.querySelector('.balance-percent').textContent = balance.percent === null ? '—' : balance.percent + '%';
+  card.querySelector('.balance-completed').textContent = '✓ ' + balance.done + ' Wykonane';
+  card.querySelector('.balance-uncompleted').textContent = balance.failed + ' Niewykonane ×';
+  card.querySelector('.balance-total').textContent = balance.total + ' łącznie';
+  const track = card.querySelector('.balance-track');
+  track.classList.toggle('is-empty', !balance.total);
+  track.setAttribute('aria-label', balance.total ? `${balance.done} wykonane, ${balance.failed} niewykonane; ${balance.percent}% wykonanych` : 'Brak rozliczonych obietnic');
+  card.querySelector('.balance-done').style.width = (balance.total ? balance.done / balance.total * 100 : 0) + '%';
+  card.querySelector('.balance-failed').style.width = (balance.total ? balance.failed / balance.total * 100 : 0) + '%';
+});
