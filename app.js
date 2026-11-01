@@ -143,17 +143,20 @@ const actors = [{
   description: 'Magazynier, Legenda sceny mta, muzyk. Od niego wszystko się zaczęło.',
   detail: 'Pierwszy zapisany moment naszej społeczności jest związany z tym kanałem. Tutaj będziemy zbierać kolejne informacje i wspomnienia.',
   url: 'https://www.twitch.tv/crisuuubtkj'
+}, {
+  name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D',
+  description: 'Wkrótce.', detail: 'Wkrótce.'
 }];
 function renderActors() {
   const query = document.querySelector('#actor-search').value.trim().toLocaleLowerCase('pl');
   const results = actors.filter(actor => [actor.name, actor.role, actor.description].join(' ').toLocaleLowerCase('pl').includes(query));
   const container = document.querySelector('#actors-list');
   container.replaceChildren();
-  document.querySelector('#actors-count').textContent = results.length === 1 ? '1 wpis' : results.length + ' wpisów';
+  document.querySelector('#actors-count').textContent = results.length + ' ' + (results.length === 1 ? 'wpis' : results.length % 10 >= 2 && results.length % 10 <= 4 && (results.length % 100 < 12 || results.length % 100 > 14) ? 'wpisy' : 'wpisów');
   for (const actor of results) {
     const card = document.createElement('article');
-    card.className = 'actor-card featured-actor';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p><a class="actor-link" href="${actor.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span> Profil (Twitch) ↗</a></div></details>`;
+    card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.url ? `<a class="actor-link" href="${actor.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span> Profil (Twitch) ↗</a>` : ''}</div></details>`;
     container.append(card);
   }
   if (!results.length) {

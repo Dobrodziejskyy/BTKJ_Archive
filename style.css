@@ -30,3 +30,5 @@
 .actor-photo{display:block;object-fit:cover;object-position:center}
 
 .balance-track{height:12px;display:flex;border:1px solid #a52b48;border-radius:8px;overflow:hidden;background:#181315}.balance-track>span{height:100%;display:block}.balance-done{background:#193f2a;box-shadow:inset 0 0 0 1px #27b85c}.balance-failed{background:#3b1721}.balance-track.is-empty{border-color:#42444c;background:#16171c}.promise-balance .red-text{color:#bd3053}.light-theme .balance-track.is-empty{background:#e2e5ec}
+
+.supporting-actor summary{padding:16px;gap:12px;min-height:130px}.supporting-actor .actor-avatar{width:44px;height:44px;font-size:22px;align-self:flex-start}.supporting-actor .actor-overview strong{font-size:14px}.supporting-actor .actor-description{font-size:13px}.supporting-actor .actor-detail{padding:0 16px 16px}
