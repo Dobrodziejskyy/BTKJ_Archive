@@ -226,13 +226,65 @@ function calculatePromiseBalance(records, now = new Date()) {
 const promiseBalances = calculatePromiseBalance(promises);
 document.querySelectorAll('[data-balance]').forEach(card => {
   const balance = promiseBalances[card.dataset.balance];
-  card.querySelector('.balance-percent').textContent = balance.percent === null ? '—' : balance.percent + '%';
-  card.querySelector('.balance-completed').textContent = '✓ ' + balance.done + ' Wykonane';
-  card.querySelector('.balance-uncompleted').textContent = balance.failed + ' Niewykonane ×';
-  card.querySelector('.balance-total').textContent = balance.total + ' łącznie';
+  card.querySelector('.balance-percent').dataset.countTo = balance.percent ?? '';
+  card.querySelector('.balance-completed').dataset.countTo = balance.done;
+  card.querySelector('.balance-uncompleted').dataset.countTo = balance.failed;
+  card.querySelector('.balance-total').dataset.countTo = balance.total;
   const track = card.querySelector('.balance-track');
   track.classList.toggle('is-empty', !balance.total);
   track.setAttribute('aria-label', balance.total ? `${balance.done} wykonane, ${balance.failed} niewykonane; ${balance.percent}% wykonanych` : 'Brak rozliczonych obietnic');
-  card.querySelector('.balance-done').style.width = (balance.total ? balance.done / balance.total * 100 : 0) + '%';
-  card.querySelector('.balance-failed').style.width = (balance.total ? balance.failed / balance.total * 100 : 0) + '%';
+  card.querySelector('.balance-done').dataset.width = balance.total ? balance.done / balance.total * 100 : 0;
+  card.querySelector('.balance-failed').dataset.width = balance.total ? balance.failed / balance.total * 100 : 0;
 });
+
+function motionAllowed() {
+  return !preferences['reduce-motion'] && !reducedMotion.matches;
+}
+function animateNumber(element, target, format, duration = 900) {
+  if (!motionAllowed() || target === 0) {
+    element.textContent = format(target);
+    return;
+  }
+  const start = performance.now();
+  const step = now => {
+    const progress = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    element.textContent = format(Math.round(target * eased));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function startPageAnimations() {
+  const revealItems = document.querySelectorAll('#home-view>section, .actors-view>*, footer');
+  revealItems.forEach(item => item.classList.add('reveal-item'));
+  if (!motionAllowed() || !('IntersectionObserver' in window)) {
+    revealItems.forEach(item => item.classList.add('is-visible'));
+  } else {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, {threshold: .08, rootMargin: '0px 0px -35px'});
+    revealItems.forEach(item => observer.observe(item));
+  }
+
+  document.querySelectorAll('.stats .stat-card>strong').forEach(number => {
+    const target = Number(number.textContent) || 0;
+    number.setAttribute('aria-label', String(target));
+    animateNumber(number, target, value => String(value), 1000);
+  });
+  document.querySelectorAll('[data-balance]').forEach((card, index) => {
+    const balance = promiseBalances[card.dataset.balance];
+    animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
+    animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
+    animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
+    animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
+    setTimeout(() => {
+      card.querySelectorAll('.balance-track>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
+      card.querySelector('.balance-track').classList.add('balance-animated');
+    }, motionAllowed() ? 180 + index * 140 : 0);
+  });
+}
+requestAnimationFrame(startPageAnimations);
