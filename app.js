@@ -142,7 +142,13 @@ const actors = [{
   name: 'crisuuubtkj', role: 'pierwszoplanowa', initials: 'C', image: './assets/images/pfp-crisuuubtkj.png',
   description: 'Magazynier, Legenda sceny mta, muzyk. Od niego wszystko się zaczęło.',
   detail: 'Pierwszy zapisany moment naszej społeczności jest związany z tym kanałem. Tutaj będziemy zbierać kolejne informacje i wspomnienia.',
-  url: 'https://www.twitch.tv/crisuuubtkj'
+  socials: [
+    { name: 'Twitch', type: 'twitch', url: 'https://www.twitch.tv/crisuuubtkj' },
+    { name: 'Kick', type: 'kick', url: 'https://kick.com/crisuuubtkj' },
+    { name: 'YouTube', type: 'youtube', url: 'https://www.youtube.com/crisuuubtkj' },
+    { name: 'Discord', type: 'discord', url: 'https://discord.gg/FVTSSrt4EY' },
+    { name: 'X', type: 'x', url: 'https://x.com/crisuuubtkj1' }
+  ]
 }, {
   name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
   description: 'Wkrótce.', detail: 'Wkrótce.'
@@ -156,7 +162,8 @@ function renderActors() {
   for (const actor of results) {
     const card = document.createElement('article');
     card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.url ? `<a class="actor-link" href="${actor.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span> Profil (Twitch) ↗</a>` : ''}</div></details>`;
+    const socialLinks = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : ''}</div></details>`;
     container.append(card);
   }
   if (!results.length) {
