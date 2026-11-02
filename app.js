@@ -252,12 +252,12 @@ const actors = [{
   name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
   description: 'Wkrótce.', detail: 'Wkrótce.'
 }, {
-  name: 'NieczorTM', role: 'drugoplanowa', initials: 'N',
+  name: 'NieczorTM', role: 'drugoplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
   description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
   detail: 'Odciął się on od społeczności po incydencie z banowaniem i unbanowaniem toksycznych osób w 2025 roku.',
   socials: [], linksLabel: 'Brak linków'
 }, {
-  name: 'Ferdynant', role: 'drugoplanowa', initials: 'F',
+  name: 'Ferdynant', role: 'drugoplanowa', initials: 'F', image: './assets/images/pfp-ferdynant.png',
   description: 'OG moderator.',
   detail: "Aktualnie przesiaduje u Svitalskiego i Randombruce'a. Nieaktywny od dłuższego czasu.",
   socials: [], linksLabel: 'Brak linków'
