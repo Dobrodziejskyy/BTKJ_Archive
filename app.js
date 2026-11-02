@@ -252,13 +252,14 @@ document.addEventListener('click', async event => {
   const link = event.target.closest('a[href^="#"]');
   if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const hash = link.getAttribute('href');
-  const target = hash === '#' ? document.documentElement : hash === '#aktorzy' ? document.querySelector('#actors-view') : document.getElementById(hash.slice(1));
+  const target = hash === '#' ? document.documentElement : hash === '#aktorzy' ? document.querySelector('#actors-view') : hash.startsWith('#aktorzy/') ? document.querySelector('#actor-detail-view') : document.getElementById(hash.slice(1));
   if (!target) return;
   event.preventDefault();
+  const returningToActors = location.hash.startsWith('#aktorzy/') && hash === '#aktorzy';
   await updatePageView(hash);
   const headerHeight = preferences['sticky-nav'] ? document.querySelector('.archive-topbar').offsetHeight : 0;
-  const isPage = ['#wydarzenia','#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
-  const top = hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
+  const isPage = hash.startsWith('#aktorzy/') || ['#wydarzenia','#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
+  const top = returningToActors ? actorListScrollY : hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
   window.scrollTo({top: Math.max(0, top), behavior: navigationBehavior()});
   if (location.hash !== hash) {
     try { history.pushState(null, '', hash); } catch {}
@@ -266,7 +267,7 @@ document.addEventListener('click', async event => {
 });
 
 const actors = [{
-  name: 'crisuuubtkj', role: 'pierwszoplanowa', initials: 'C', image: './assets/images/pfp-crisuuubtkj.png',
+  slug: 'crisuuubtkj', name: 'crisuuubtkj', role: 'pierwszoplanowa', initials: 'C', image: './assets/images/pfp-crisuuubtkj.png',
   description: 'Magazynier, Legenda sceny mta, muzyk. Od niego wszystko się zaczęło.',
   detail: 'Pierwszy zapisany moment naszej społeczności jest związany z tym kanałem. Tutaj będziemy zbierać kolejne informacje i wspomnienia.',
   socials: [
@@ -277,23 +278,53 @@ const actors = [{
     { name: 'X', type: 'x', url: 'https://x.com/crisuuubtkj1' }
   ]
 }, {
-  name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
+  slug: 'dobrodziejskyy', name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
   description: 'OG moderator.',
   detail: 'Dołączył dokładnie 25 marca podczas pierwszego streama legendarnego pierwszego sezonu streamerskiego crisa.<br><br>Późniejszy założyciel DRL, do którego przeszła spora liczba osób po zakończeniu systematycznego streamowania crisa.<br><br>Pomimo braku dalszych streamów oraz innych form aktywności społeczności dalej robi edity, udziela się na starych społecznościowych Discordach i robi to, co robił wcześniej, bez większej zmiany.',
   note: 'Outlast DLC HOPE', hopeIcon: true, socials: [], linksLabel: 'Brak linków'
 }, {
-  name: 'NieczorTM', role: 'drugoplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
+  slug: 'nieczortm', name: 'NieczorTM', role: 'drugoplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
   description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
   detail: 'Odciął się on od społeczności po incydencie z banowaniem i unbanowaniem toksycznych osób w 2025 roku.',
   socials: [], linksLabel: 'Brak linków'
 }, {
-  name: 'Ferdynant', role: 'drugoplanowa', initials: 'F', image: './assets/images/pfp-ferdynant.png',
+  slug: 'ferdynant', name: 'Ferdynant', role: 'drugoplanowa', initials: 'F', image: './assets/images/pfp-ferdynant.png',
   description: 'OG moderator.',
   detail: "Aktualnie przesiaduje u Svitalskiego i Randombruce'a. Nieaktywny od dłuższego czasu.",
   talentHunter: 'Parę razy zespotowany podczas przeglądu Twitch na streamach osób mało znanych, wyglądających i contentem przypominających Makajlera, Rafatusa i Rafonixa.',
   talentVideo: 'https://www.youtube-nocookie.com/embed/v08fNQY-97o?start=303&autoplay=1&rel=0',
   socials: [], linksLabel: 'Brak linków'
 }];
+const actorDetailView = document.querySelector('#actor-detail-view');
+function actorAvatarMarkup(actor, size = 96) {
+  return actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="${size}" height="${size}">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`;
+}
+function actorSocialMarkup(actor) {
+  const links = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
+  return links ? `<div class="actor-socials" aria-label="Profile społecznościowe">${links}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`;
+}
+function actorExtrasMarkup(actor) {
+  const note = actor.note ? `<p class="actor-note">${actor.hopeIcon ? `<span class="hope-icon" role="img" aria-label="HOPE, nawiązanie do Half-Life 3" title="HOPE — Half-Life 3">λ³</span>` : ''}<span>${actor.note}</span></p>` : '';
+  const talent = actor.talentHunter ? `<div class="talent-hunter"><span>🍺 TALENT HUNTER</span><details><summary aria-label="Więcej informacji o odznace Talent Hunter" title="Więcej informacji">i</summary><div class="talent-hunter-panel"><p>${actor.talentHunter}</p>${actor.talentVideo ? `<div class="talent-video"><iframe data-src="${actor.talentVideo}" title="Talent Hunter — Ferdynant" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : ''}</div></details></div>` : '';
+  return note + talent;
+}
+function bindTalentPlayer(scope) {
+  const details = scope.querySelector('.talent-hunter details');
+  details?.addEventListener('toggle', () => {
+    const player = details.querySelector('iframe');
+    if (player) player.src = details.open ? player.dataset.src : '';
+  });
+}
+function renderActorDetail(actor) {
+  if (!actor) return;
+  const actorIndex = actors.indexOf(actor);
+  const previousActor = actors[actorIndex - 1];
+  const nextActor = actors[actorIndex + 1];
+  const previousLink = previousActor ? `<a href="#aktorzy/${previousActor.slug}" class="actor-profile-sibling previous"><span aria-hidden="true">←</span><small>Poprzedni aktor</small><strong>${previousActor.name}</strong></a>` : '<span></span>';
+  const nextLink = nextActor ? `<a href="#aktorzy/${nextActor.slug}" class="actor-profile-sibling next"><small>Następny aktor</small><strong>${nextActor.name}</strong><span aria-hidden="true">→</span></a>` : '<span></span>';
+  actorDetailView.innerHTML = `<div class="actor-profile-heading"><span>POSTAĆ ${actor.role.toLocaleUpperCase('pl')}</span><h1>${actor.name}</h1></div><div class="actor-profile-hero-row"><a href="#aktorzy" class="actor-profile-back" aria-label="Wróć do listy aktorów" title="Wróć do listy aktorów">←</a><article class="panel actor-profile-hero">${actorAvatarMarkup(actor, 112)}<div><span class="actor-role">${actor.role}</span><h2>${actor.name}</h2><p>${actor.description}</p></div></article></div><section class="actor-profile-section"><h2><span aria-hidden="true">◆</span> Kim jest</h2><div class="panel actor-profile-content"><p>${actor.detail}</p>${actorExtrasMarkup(actor)}</div></section><nav class="actor-profile-navigation" aria-label="Przejdź między aktorami">${previousLink}${nextLink}</nav><section class="actor-profile-section"><h2><span aria-hidden="true">↗</span> Linki</h2><div class="panel actor-profile-links">${actorSocialMarkup(actor)}</div></section>`;
+  bindTalentPlayer(actorDetailView);
+}
 let actorFilter = 'all';
 function renderActors() {
   const query = document.querySelector('#actor-search').value.trim().toLocaleLowerCase('pl');
@@ -304,13 +335,7 @@ function renderActors() {
   for (const actor of results) {
     const card = document.createElement('article');
     card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
-    const socialLinks = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.note ? `<p class="actor-note">${actor.hopeIcon ? `<span class="hope-icon" role="img" aria-label="HOPE, nawiązanie do Half-Life 3" title="HOPE — Half-Life 3">λ³</span>` : ''}<span>${actor.note}</span></p>` : ''}${actor.talentHunter ? `<div class="talent-hunter"><span>🍺 TALENT HUNTER</span><details><summary aria-label="Więcej informacji o odznace Talent Hunter" title="Więcej informacji">i</summary><div class="talent-hunter-panel"><p>${actor.talentHunter}</p>${actor.talentVideo ? `<div class="talent-video"><iframe data-src="${actor.talentVideo}" title="Talent Hunter — Ferdynant" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : ''}</div></details></div>` : ''}${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
-    const talentDetails = card.querySelector('.talent-hunter details');
-    talentDetails?.addEventListener('toggle', () => {
-      const player = talentDetails.querySelector('iframe');
-      if (player) player.src = talentDetails.open ? player.dataset.src : '';
-    });
+    card.innerHTML = `<a class="actor-card-link" href="#aktorzy/${actor.slug}" aria-label="Otwórz profil aktora ${actor.name}">${actorAvatarMarkup(actor)}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></a>`;
     container.append(card);
   }
   if (!results.length) {
@@ -526,10 +551,17 @@ renderPromisePanel();
 
 let currentPageKey;
 let pageTransitionId = 0;
+let actorListScrollY = 0;
 async function updatePageView(hash = location.hash, animate = true) {
   const pages = {wydarzenia:'Wydarzenia',obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
-  const requested = hash.replace('#', '');
-  const activePage = pages[requested] ? requested : 'home';
+  const requested = hash.replace(/^#/, '');
+  const actorSlug = requested.startsWith('aktorzy/') ? requested.slice('aktorzy/'.length) : '';
+  const selectedActor = actorSlug ? actors.find(actor => actor.slug === actorSlug) : null;
+  const activePage = selectedActor ? 'aktor-szczegoly' : pages[requested] ? requested : actorSlug ? 'aktorzy' : 'home';
+  const previousPage = currentPageKey;
+  if (previousPage === 'aktorzy' && activePage === 'aktor-szczegoly') actorListScrollY = window.scrollY;
+  const returningToActorList = previousPage === 'aktor-szczegoly' && activePage === 'aktorzy';
+  if (activePage !== 'aktor-szczegoly') actorDetailView.querySelectorAll('iframe').forEach(player => { player.src = ''; });
   const changingPage = Boolean(currentPageKey && currentPageKey !== activePage);
   const transition = changingPage && animate && motionAllowed();
   const transitionId = ++pageTransitionId;
@@ -540,6 +572,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     await new Promise(resolve => setTimeout(resolve, 210));
     if (transitionId !== pageTransitionId) return;
   }
+  if (selectedActor) renderActorDetail(selectedActor);
   currentPageKey = activePage;
   document.querySelectorAll('[data-page-view]').forEach(view => {
     const current = view.dataset.pageView === activePage;
@@ -551,12 +584,12 @@ async function updatePageView(hash = location.hash, animate = true) {
     }
   });
   document.querySelectorAll('.archive-nav .topbar-item').forEach(item => {
-    const current = activePage === 'home' ? item.getAttribute('href') === '#' : item.getAttribute('href') === '#' + activePage;
+    const current = activePage === 'home' ? item.getAttribute('href') === '#' : activePage === 'aktor-szczegoly' ? item.getAttribute('href') === '#aktorzy' : item.getAttribute('href') === '#' + activePage;
     item.classList.toggle('is-current', current);
     if (current) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-  document.title = activePage === 'home' ? 'BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
+  document.title = activePage === 'home' ? 'BTKJ Archive' : selectedActor ? selectedActor.name + ' — Aktorzy — BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');
@@ -564,6 +597,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     if (transitionId !== pageTransitionId) return;
     document.body.classList.remove('page-entering');
   }
+  if (returningToActorList) requestAnimationFrame(() => window.scrollTo({top:actorListScrollY, behavior:'auto'}));
 }
 window.addEventListener('popstate', () => updatePageView(location.hash));
 window.addEventListener('hashchange', () => updatePageView(location.hash));
