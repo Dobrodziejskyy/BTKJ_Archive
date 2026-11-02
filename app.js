@@ -360,15 +360,16 @@ document.querySelector('#actor-filters').addEventListener('click', event => {
 renderActors();
 
 const mediaItems = [
-  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'},
-  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'},
-  {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', type:'photo'}
+  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', type:'photo', category:'general', categoryLabel:'Ogólne'},
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', type:'photo', category:'general', categoryLabel:'Ogólne'},
+  {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
 const mediaDialogImage = document.querySelector('#media-lightbox-image');
 let activeMediaIndex = 0;
 let mediaFilter = 'all';
+let mediaCategory = 'all';
 function showMediaItem(index) {
   activeMediaIndex = (index + mediaItems.length) % mediaItems.length;
   const item = mediaItems[activeMediaIndex];
@@ -414,6 +415,18 @@ document.querySelector('#media-filters')?.addEventListener('click', event => {
   renderMediaCatalog();
   document.querySelector('#media-collection').scrollIntoView({behavior:navigationBehavior(), block:'start'});
 });
+document.querySelector('#media-categories')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-media-category]');
+  if (!button) return;
+  mediaCategory = button.dataset.mediaCategory;
+  document.querySelectorAll('#media-categories [data-media-category]').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', String(active));
+  });
+  renderMediaCatalog();
+  document.querySelector('#media-collection').scrollIntoView({behavior:navigationBehavior(), block:'start'});
+});
 function renderMediaCatalog() {
   const query = document.querySelector('#media-search').value.trim().toLocaleLowerCase('pl');
   let visible = 0;
@@ -421,8 +434,9 @@ function renderMediaCatalog() {
   mediaGrid.querySelectorAll('[data-media-type]').forEach(card => {
     const item = mediaItems[Number(card.dataset.mediaIndex)];
     const matchesType = mediaFilter === 'all' || card.dataset.mediaType === mediaFilter;
-    const matchesQuery = !query || [item.title,item.created,item.alt,'Forza Horizon 4','BTKJ Gang','BMW'].join(' ').toLocaleLowerCase('pl').includes(query);
-    const matches = matchesType && matchesQuery;
+    const matchesCategory = mediaCategory === 'all' || item.category === mediaCategory;
+    const matchesQuery = !query || [item.title,item.dateSearch,item.categoryLabel,item.alt,'Forza Horizon 4','BTKJ Gang','BMW','Minecraft'].join(' ').toLocaleLowerCase('pl').includes(query);
+    const matches = matchesType && matchesCategory && matchesQuery;
     card.hidden = !matches;
     if (matches) {
       visible += 1;
@@ -432,7 +446,8 @@ function renderMediaCatalog() {
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
   const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
-  document.querySelector('#media-group-title').textContent = labels[mediaFilter];
+  const categoryLabels = {general:'Ogólne','minecraft-season-1':'Pierwszy sezon Minecraft'};
+  document.querySelector('#media-group-title').textContent = mediaCategory === 'all' ? labels[mediaFilter] : categoryLabels[mediaCategory];
   document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
   const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)))].sort();
   document.querySelector('#media-date-summary').textContent = !visibleItems.length ? 'brak materiałów' : visibleItems.length === 1 ? visibleItems[0].created : visibleYears.length === 1 ? visibleYears[0] : `${visibleYears[0]}–${visibleYears.at(-1)}`;
@@ -457,6 +472,9 @@ vodSearch?.addEventListener('input', () => {
 const promiseEntries = [{
   id: 'outlast-1k', date: '12 Kwietnia 2021r', promiseDate: '2021-04-12', time: '', title: 'Outlast na 1k obserwujących Twitch', status: 'done',
   priority: 3, source: 'brak źródła', details: 'obietnica na stream', platform: 'stream', pinned: false, modifiedRecently: false, resolvedAt: '2021-04-12', archived: false
+}, {
+  id: 'fortnite-42h', date: '11 listopada 2021r', promiseDate: '2021-11-11', time: '17:33', title: '42h stream z kolejnego sezonu fortnite', status: 'failed',
+  priority: 3, source: 'Archive.org', sourceUrl: 'https://archive.org/details/obietnica-42h-z-fortnite', details: 'obietnica na stream', platform: 'stream', pinned: false, modifiedRecently: false, resolvedAt: '2021-11-11', archived: false
 }];
 let promiseBalances = null;
 const promiseStateKey = 'btkj-drl-promise-panel-v1';
@@ -480,9 +498,9 @@ promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-ti
     <div class="promise-calendar" hidden><label>Data <input type="date" data-promise-calendar></label><button type="button" data-promise-action="clear-calendar">Wyczyść</button></div>
     <div class="promise-search-row"><label class="archive-search"><span aria-hidden="true">⌕</span><input type="search" data-promise-search placeholder="Szukaj w obietnicach..." aria-label="Szukaj w obietnicach"></label><div class="promise-view-actions" aria-label="Widok i filtry"><button type="button" data-promise-action="open-filter" data-filter-panel="status" aria-label="Wybierz status" title="Status" aria-expanded="false">⌘</button><button type="button" data-promise-action="open-filter" data-filter-panel="priority" aria-label="Wybierz priorytet" title="Priorytet" aria-expanded="false">▥</button><button type="button" data-promise-action="open-filter" data-filter-panel="sort" aria-label="Wybierz sortowanie" title="Sortowanie" aria-expanded="false">⇅</button><button type="button" data-promise-action="open-filter" data-filter-panel="more" aria-label="Więcej filtrów" title="Więcej filtrów" aria-expanded="false">▽</button><button type="button" data-promise-action="reset" aria-label="Resetuj wszystkie filtry" title="Resetuj wszystkie filtry">↻</button></div></div>
     <div class="promise-filter-popover" data-promise-popover hidden></div>
-    <div class="promise-statistics" hidden><div><strong data-stat="all">1</strong><span>testowe</span></div><div><strong data-stat="visible">1</strong><span>testowe</span></div><div><strong>testowe</strong><span>testowe</span></div></div>
+    <div class="promise-statistics" hidden><div><strong data-stat="all">2</strong><span>testowe</span></div><div><strong data-stat="visible">2</strong><span>testowe</span></div><div><strong>testowe</strong><span>testowe</span></div></div>
   </section>
-  <div class="promise-list-meta"><strong data-promise-count>1 wpis</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b>testowe</b></span></div>
+  <div class="promise-list-meta"><strong data-promise-count>2 wpisy</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b>testowe</b></span></div>
   <section class="panel promise-results" data-promise-results aria-live="polite"></section>`;
 
 function savePromiseState() {
@@ -538,10 +556,12 @@ function renderPromisePanel() {
   const results = promisesView.querySelector('[data-promise-results]');
   promisesView.classList.toggle('promise-compact', promiseState.compact);
   const statusLabels = {done:'WYKONANE',failed:'NIEWYKONANE',testowe:'TESTOWE'};
-  results.innerHTML = rows.length ? rows.map(entry => `<article class="promise-entry" data-promise-id="${entry.id}"><div class="promise-entry-top"><span><strong>${entry.date}</strong>${entry.time ? ` ${entry.time}` : ''}<small><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="14" height="14" rx="3"/><path d="m17 10 4-2v8l-4-2z"/></svg>${entry.details}</small></span><b class="status-${entry.status}">${statusLabels[entry.status] || entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="promise-entry-bottom"><span class="promise-priority">Priorytet: <strong aria-label="${entry.priority} na 5">${Array.from({length:5}, (_, index) => `<i${index < entry.priority ? ' class="active"' : ''}></i>`).join('')}</strong></span><span>${entry.source}</span><div><button type="button" aria-label="Historia obietnicy" title="Historia">↻</button><button type="button" aria-label="Kopiuj link" title="Kopiuj link" data-copy-promise>↗</button></div></div></article>`).join('') : `<div class="promise-empty"><strong>Brak pasujących obietnic</strong><span>Zmień wyszukiwanie lub wyczyść filtry.</span></div>`;
-  promisesView.querySelector('[data-promise-count]').textContent = rows.length + (rows.length === 1 ? ' wpis' : ' wpisów');
+  results.innerHTML = rows.length ? rows.map(entry => `<article class="promise-entry" data-promise-id="${entry.id}"><div class="promise-entry-top"><span><strong>${entry.date}</strong>${entry.time ? ` ${entry.time}` : ''}<small><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="14" height="14" rx="3"/><path d="m17 10 4-2v8l-4-2z"/></svg>${entry.details}</small></span><b class="status-${entry.status}">${statusLabels[entry.status] || entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="promise-entry-bottom"><span class="promise-priority">Priorytet: <strong aria-label="${entry.priority} na 5">${Array.from({length:5}, (_, index) => `<i${index < entry.priority ? ' class="active"' : ''}></i>`).join('')}</strong></span>${entry.sourceUrl ? `<a class="promise-source-link" href="${entry.sourceUrl}" target="_blank" rel="noopener noreferrer">${entry.source} ↗</a>` : `<span>${entry.source}</span>`}<div><button type="button" aria-label="Historia obietnicy" title="Historia">↻</button><button type="button" aria-label="Kopiuj link" title="Kopiuj link" data-copy-promise>↗</button></div></div></article>`).join('') : `<div class="promise-empty"><strong>Brak pasujących obietnic</strong><span>Zmień wyszukiwanie lub wyczyść filtry.</span></div>`;
+  const countLabel = rows.length === 1 ? 'wpis' : rows.length >= 2 && rows.length <= 4 ? 'wpisy' : 'wpisów';
+  promisesView.querySelector('[data-promise-count]').textContent = `${rows.length} ${countLabel}`;
   const filterLabels = {all:'wszystkie',done:'wykonane',failed:'niewykonane',pending_short:'do wykonania niedługo',pending_long:'do wykonania długoterminowo',conditional:'warunkowe',important:'ważne do odwołania',unknown:'nie wiadomo'};
   promisesView.querySelector('[data-promise-status]').textContent = promiseState.archive ? 'archiwum' : filterLabels[promiseState.status] || promiseState.status;
+  promisesView.querySelector('[data-stat="all"]').textContent = promiseEntries.length;
   promisesView.querySelector('[data-stat="visible"]').textContent = rows.length;
   promisesView.querySelector('[data-promise-search]').value = promiseState.query;
   promisesView.querySelector('[data-promise-toggle="compact"]').checked = promiseState.compact;
