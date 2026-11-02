@@ -34,13 +34,15 @@ window.addEventListener('load', queueSiteLoaderDismissal, {once:true});
 setTimeout(queueSiteLoaderDismissal, 5000);
 
 const events = [
-  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
-  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'beginnings', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
+  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
+  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'beginnings', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
 ];
 const list = document.querySelector('#timeline-list');
 function render(filter = 'all') {
   list.replaceChildren();
-  const visibleEvents = events.filter(event => filter === 'all' || event.category === filter);
+  const visibleEvents = events
+    .filter(event => filter === 'all' || event.category === filter)
+    .sort((first, second) => second.date.localeCompare(first.date));
   if (!visibleEvents.length) {
     const message = document.createElement('p');
     message.className = 'section-description';
@@ -50,7 +52,7 @@ function render(filter = 'all') {
   for (const event of visibleEvents) {
     const article = document.createElement('article');
     article.className = 'event';
-    article.innerHTML = `<div class="event-date"><span>ROZDZIAŁ ${event.number}</span><small><time datetime="${event.date}">${event.displayDate}</time></small></div><div class="timeline-dot"></div><div class="event-card"><div class="event-text"><span class="category ${event.theme}">${event.label}</span><h3>${event.title}</h3><p>${event.description}</p><details><summary>O tym wspomnieniu <span>↗</span></summary><p>${event.detail}</p><p><a href="${event.url}" target="_blank" rel="noopener noreferrer">${event.linkLabel} ↗</a></p></details></div><div class="event-art ${event.theme}" aria-hidden="true"><span>${event.icon}</span><small>WSPOMNIENIE_${event.number}</small></div></div>`;
+    article.innerHTML = `<div class="event-date"><span>ROZDZIAŁ ${event.number}</span><small><time datetime="${event.date}">${event.displayDate}</time></small></div><div class="timeline-dot"></div><div class="event-card"><div class="event-text"><span class="category ${event.theme}">${event.label}</span><h3>${event.title}</h3><p>${event.description}</p><details><summary>O tym wspomnieniu <span>↗</span></summary><p>${event.detail}</p><p><a href="${event.url}" target="_blank" rel="noopener noreferrer">${event.linkLabel} ↗</a></p></details></div></div>`;
     list.append(article);
   }
 }

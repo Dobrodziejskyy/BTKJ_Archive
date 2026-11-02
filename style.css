@@ -141,3 +141,6 @@ body.is-loading{overflow:hidden}.site-loader{position:fixed;inset:0;z-index:1000
 .balance-track:after{display:none}
 
 .balance-track:not(.is-empty)>span{opacity:0;transition:none}.balance-track.balance-values-visible:not(.is-empty)>span{opacity:1;transition:width 1.15s cubic-bezier(.22,1,.36,1),opacity .12s ease}@media(prefers-reduced-motion:reduce){.balance-track.balance-values-visible:not(.is-empty)>span{transition:none}}.reduce-motion .balance-track.balance-values-visible:not(.is-empty)>span{transition:none}
+
+/* Strona główna pokazuje wyłącznie ważne ogłoszenia i pełną szerokość treści wspomnień. */
+.announcement-update:not([data-important="true"]){display:none}.event-text{min-width:0;flex:1}
