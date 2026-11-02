@@ -577,6 +577,14 @@ function calculatePromiseBalance(records, now = new Date()) {
 }
 function refreshPromiseBalances(applyWidths = false) {
   promiseBalances = calculatePromiseBalance(promiseEntries);
+  const all = promiseBalances.all;
+  const promiseStats = {pending: all.total - all.resolved, done: all.done, failed: all.failed, total: all.total};
+  document.querySelectorAll('[data-promise-stat]').forEach(element => {
+    const value = promiseStats[element.dataset.promiseStat] ?? 0;
+    element.textContent = value;
+    element.dataset.countTo = value;
+    element.setAttribute('aria-label', String(value));
+  });
   document.querySelectorAll('[data-balance]').forEach(card => {
     const balance = promiseBalances[card.dataset.balance];
     const percent = card.querySelector('.balance-percent');
