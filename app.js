@@ -239,6 +239,110 @@ function renderActors() {
 }
 document.querySelector('#actor-search').addEventListener('input', renderActors);
 renderActors();
+
+const promiseEntries = [{
+  id: 'testowe', date: 'testowe', time: 'testowe', title: 'testowe', status: 'testowe',
+  priority: 'testowe', source: 'testowe', details: 'testowe', archived: false
+}];
+const promiseStateKey = 'btkj-drl-promise-panel-v1';
+let promiseState = {query:'', compact:false, remember:false, archive:false, grid:false, sort:'desc', status:'all', calendar:'', stats:false};
+try {
+  const saved = JSON.parse(localStorage.getItem(promiseStateKey) || '{}');
+  if (saved.remember) promiseState = {...promiseState, ...saved, remember:true};
+} catch {}
+const promisesView = document.querySelector('#obietnice');
+promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><span aria-hidden="true">▣</span>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ × DRL <span aria-hidden="true">›</span></small></div>
+  <section class="panel promise-control-panel" aria-label="Narzędzia obietnic">
+    <div class="promise-actions">
+      <button type="button" data-promise-action="archive" aria-pressed="false"><span aria-hidden="true">▱</span>Archiwum</button>
+      <button type="button" data-promise-action="random"><span aria-hidden="true">⚄</span>Losuj</button>
+      <button type="button" data-promise-action="calendar" aria-expanded="false"><span aria-hidden="true">▣</span>Kalendarz</button>
+      <label class="promise-switch">Widok kompaktowy <input type="checkbox" data-promise-toggle="compact" role="switch"><i></i></label>
+      <label class="promise-switch">Pamiętaj filtry <input type="checkbox" data-promise-toggle="remember" role="switch"><i></i></label>
+      <button class="promise-stats-button" type="button" data-promise-action="stats" aria-expanded="false"><span aria-hidden="true">⌁</span>Statystyki</button>
+    </div>
+    <div class="promise-calendar" hidden><label>Data <input type="date" data-promise-calendar></label><button type="button" data-promise-action="clear-calendar">Wyczyść</button></div>
+    <div class="promise-search-row"><label class="archive-search"><span aria-hidden="true">⌕</span><input type="search" data-promise-search placeholder="Szukaj w obietnicach..." aria-label="Szukaj w obietnicach"></label><div class="promise-view-actions" aria-label="Widok i filtry"><button type="button" data-promise-action="grid" aria-label="Zmień układ" title="Zmień układ">⊞</button><button type="button" data-promise-action="stats" aria-label="Pokaż statystyki" title="Pokaż statystyki">▥</button><button type="button" data-promise-action="sort" aria-label="Zmień sortowanie" title="Zmień sortowanie">⇅</button><button type="button" data-promise-action="filter" aria-label="Filtruj status" title="Filtruj status">▽</button><button type="button" data-promise-action="reset" aria-label="Resetuj filtry" title="Resetuj filtry">↻</button></div></div>
+    <div class="promise-statistics" hidden><div><strong data-stat="all">1</strong><span>testowe</span></div><div><strong data-stat="visible">1</strong><span>testowe</span></div><div><strong>testowe</strong><span>testowe</span></div></div>
+  </section>
+  <div class="promise-list-meta"><strong data-promise-count>1 wpis</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b>testowe</b></span></div>
+  <section class="panel promise-results" data-promise-results aria-live="polite"></section>`;
+
+function savePromiseState() {
+  try {
+    if (promiseState.remember) localStorage.setItem(promiseStateKey, JSON.stringify(promiseState));
+    else localStorage.removeItem(promiseStateKey);
+  } catch {}
+}
+function visiblePromiseEntries() {
+  const query = promiseState.query.trim().toLocaleLowerCase('pl');
+  const rows = promiseEntries.filter(entry => {
+    const matchesQuery = !query || Object.values(entry).join(' ').toLocaleLowerCase('pl').includes(query);
+    const matchesArchive = promiseState.archive ? entry.archived : !entry.archived;
+    const matchesStatus = promiseState.status === 'all' || entry.status === promiseState.status;
+    const matchesCalendar = !promiseState.calendar || entry.date === promiseState.calendar;
+    return matchesQuery && matchesArchive && matchesStatus && matchesCalendar;
+  });
+  return rows.sort((a, b) => promiseState.sort === 'asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+}
+function renderPromisePanel() {
+  const rows = visiblePromiseEntries();
+  const results = promisesView.querySelector('[data-promise-results]');
+  promisesView.classList.toggle('promise-compact', promiseState.compact);
+  results.classList.toggle('promise-grid', promiseState.grid);
+  results.innerHTML = rows.length ? rows.map(entry => `<article class="promise-entry" data-promise-id="${entry.id}"><div class="promise-entry-top"><span><strong>${entry.date}</strong> ${entry.time} <small>▧ · ${entry.details}</small></span><b>${entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="promise-entry-bottom"><span>Priorytet: <strong>${entry.priority}</strong></span><span>${entry.source}</span><div><button type="button" aria-label="Historia obietnicy" title="Historia">↻</button><button type="button" aria-label="Kopiuj link" title="Kopiuj link" data-copy-promise>↗</button></div></div></article>`).join('') : `<div class="promise-empty"><strong>Brak pasujących obietnic</strong><span>Zmień wyszukiwanie lub wyczyść filtry.</span></div>`;
+  promisesView.querySelector('[data-promise-count]').textContent = rows.length + (rows.length === 1 ? ' wpis' : ' wpisów');
+  promisesView.querySelector('[data-promise-status]').textContent = promiseState.archive ? 'archiwum' : promiseState.status === 'all' ? 'wszystkie' : promiseState.status;
+  promisesView.querySelector('[data-stat="visible"]').textContent = rows.length;
+  promisesView.querySelector('[data-promise-search]').value = promiseState.query;
+  promisesView.querySelector('[data-promise-toggle="compact"]').checked = promiseState.compact;
+  promisesView.querySelector('[data-promise-toggle="remember"]').checked = promiseState.remember;
+  promisesView.querySelector('[data-promise-calendar]').value = promiseState.calendar;
+  promisesView.querySelector('[data-promise-action="archive"]').setAttribute('aria-pressed', String(promiseState.archive));
+  promisesView.querySelector('.promise-statistics').hidden = !promiseState.stats;
+  promisesView.querySelectorAll('[data-promise-action="stats"]').forEach(button => button.setAttribute('aria-expanded', String(promiseState.stats)));
+  savePromiseState();
+}
+promisesView.addEventListener('input', event => {
+  if (event.target.matches('[data-promise-search]')) promiseState.query = event.target.value;
+  if (event.target.matches('[data-promise-calendar]')) promiseState.calendar = event.target.value;
+  if (event.target.matches('[data-promise-toggle]')) promiseState[event.target.dataset.promiseToggle] = event.target.checked;
+  renderPromisePanel();
+});
+promisesView.addEventListener('click', async event => {
+  const button = event.target.closest('[data-promise-action], [data-copy-promise]');
+  if (!button) return;
+  if (button.hasAttribute('data-copy-promise')) {
+    try { await navigator.clipboard.writeText(location.href.split('#')[0] + '#obietnice'); button.textContent = '✓'; } catch {}
+    return;
+  }
+  const action = button.dataset.promiseAction;
+  if (action === 'archive') promiseState.archive = !promiseState.archive;
+  if (action === 'calendar') {
+    const panel = promisesView.querySelector('.promise-calendar');
+    panel.hidden = !panel.hidden;
+    button.setAttribute('aria-expanded', String(!panel.hidden));
+    return;
+  }
+  if (action === 'clear-calendar') promiseState.calendar = '';
+  if (action === 'grid') promiseState.grid = !promiseState.grid;
+  if (action === 'stats') promiseState.stats = !promiseState.stats;
+  if (action === 'sort') promiseState.sort = promiseState.sort === 'desc' ? 'asc' : 'desc';
+  if (action === 'filter') promiseState.status = promiseState.status === 'all' ? 'testowe' : 'all';
+  if (action === 'reset') promiseState = {...promiseState, query:'', archive:false, grid:false, sort:'desc', status:'all', calendar:'', stats:false};
+  if (action === 'random') {
+    const rows = visiblePromiseEntries();
+    renderPromisePanel();
+    const chosen = rows.length ? promisesView.querySelector(`[data-promise-id="${rows[Math.floor(Math.random() * rows.length)].id}"]`) : null;
+    chosen?.scrollIntoView({behavior:navigationBehavior(), block:'center'});
+    chosen?.classList.add('is-random');
+    setTimeout(() => chosen?.classList.remove('is-random'), 900);
+    return;
+  }
+  renderPromisePanel();
+});
+renderPromisePanel();
+
 let currentPageKey;
 function updatePageView(hash = location.hash) {
   const pages = {obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
