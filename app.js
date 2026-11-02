@@ -291,6 +291,7 @@ const actors = [{
   description: 'OG moderator.',
   detail: "Aktualnie przesiaduje u Svitalskiego i Randombruce'a. Nieaktywny od dłuższego czasu.",
   talentHunter: 'Parę razy zespotowany podczas przeglądu Twitch na streamach osób mało znanych, wyglądających i contentem przypominających Makajlera, Rafatusa i Rafonixa.',
+  talentVideo: 'https://www.youtube-nocookie.com/embed/v08fNQY-97o?start=80&autoplay=1&rel=0',
   socials: [], linksLabel: 'Brak linków'
 }];
 let actorFilter = 'all';
@@ -304,7 +305,12 @@ function renderActors() {
     const card = document.createElement('article');
     card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
     const socialLinks = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.note ? `<p class="actor-note">${actor.hopeIcon ? `<span class="hope-icon" role="img" aria-label="HOPE, nawiązanie do Half-Life 3" title="HOPE — Half-Life 3">λ³</span>` : ''}<span>${actor.note}</span></p>` : ''}${actor.talentHunter ? `<div class="talent-hunter"><span>🍺 TALENT HUNTER</span><details><summary aria-label="Więcej informacji o odznace Talent Hunter" title="Więcej informacji">i</summary><p>${actor.talentHunter}</p></details></div>` : ''}${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.note ? `<p class="actor-note">${actor.hopeIcon ? `<span class="hope-icon" role="img" aria-label="HOPE, nawiązanie do Half-Life 3" title="HOPE — Half-Life 3">λ³</span>` : ''}<span>${actor.note}</span></p>` : ''}${actor.talentHunter ? `<div class="talent-hunter"><span>🍺 TALENT HUNTER</span><details><summary aria-label="Więcej informacji o odznace Talent Hunter" title="Więcej informacji">i</summary><div class="talent-hunter-panel"><p>${actor.talentHunter}</p>${actor.talentVideo ? `<div class="talent-video"><iframe data-src="${actor.talentVideo}" title="Talent Hunter — Ferdynant" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : ''}</div></details></div>` : ''}${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
+    const talentDetails = card.querySelector('.talent-hunter details');
+    talentDetails?.addEventListener('toggle', () => {
+      const player = talentDetails.querySelector('iframe');
+      if (player) player.src = talentDetails.open ? player.dataset.src : '';
+    });
     container.append(card);
   }
   if (!results.length) {
