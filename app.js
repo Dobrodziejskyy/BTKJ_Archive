@@ -1,3 +1,35 @@
+const siteLoader = document.querySelector('#site-loader');
+const siteLoaderTip = document.querySelector('#site-loader-tip');
+const siteLoaderTips = [
+  'Wpisz BTKJ na stronie, aby odblokować sekretny motyw.',
+  'Historia archiwum sięga pierwszego zachowanego streama z 23 maja 2020 roku.',
+  'Zdjęcia w Mediach możesz wyszukiwać po nazwie, dacie i kategorii.',
+  'Przycisk Losuj w Obietnicach uruchamia pełnoekranową ruletkę.',
+  'Każdy aktor ma osobny profil z rolą w historii społeczności.'
+];
+const siteLoaderStartedAt = performance.now();
+let siteLoaderDismissed = false;
+let siteLoaderTipIndex = 0;
+try {
+  siteLoaderTipIndex = Math.max(0, Number(sessionStorage.getItem('btkj-loader-tip-v1')) || 0) % siteLoaderTips.length;
+  sessionStorage.setItem('btkj-loader-tip-v1', String(siteLoaderTipIndex + 1));
+} catch {}
+if (siteLoaderTip) siteLoaderTip.textContent = siteLoaderTips[siteLoaderTipIndex];
+function dismissSiteLoader() {
+  if (!siteLoader || siteLoaderDismissed) return;
+  siteLoaderDismissed = true;
+  siteLoader.classList.add('is-leaving');
+  document.body.classList.remove('is-loading');
+  setTimeout(() => siteLoader.remove(), 420);
+}
+function queueSiteLoaderDismissal() {
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const minimumDuration = reduceMotion ? 350 : 1450;
+  setTimeout(dismissSiteLoader, Math.max(0, minimumDuration - (performance.now() - siteLoaderStartedAt)));
+}
+window.addEventListener('load', queueSiteLoaderDismissal, {once:true});
+setTimeout(queueSiteLoaderDismissal, 5000);
+
 const events = [
   { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
   { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'beginnings', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
@@ -364,9 +396,9 @@ document.querySelector('#actor-filters').addEventListener('click', event => {
 renderActors();
 
 const mediaItems = [
-  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', type:'photo', category:'general', categoryLabel:'Ogólne'},
-  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', type:'photo', category:'general', categoryLabel:'Ogólne'},
-  {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'}
+  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto przód', type:'photo', category:'general', categoryLabel:'Ogólne'},
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto tył', type:'photo', category:'general', categoryLabel:'Ogólne'},
+  {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', tags:'Minecraft serwer sezon 1 pierwszy sezon Steve dom', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
@@ -431,15 +463,19 @@ document.querySelector('#media-categories')?.addEventListener('click', event => 
   renderMediaCatalog();
   document.querySelector('#media-collection').scrollIntoView({behavior:navigationBehavior(), block:'start'});
 });
+function normalizeMediaSearch(value) {
+  return String(value).toLocaleLowerCase('pl').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[–—−]/g, '-').replace(/[./_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
 function renderMediaCatalog() {
-  const query = document.querySelector('#media-search').value.trim().toLocaleLowerCase('pl');
+  const queryTokens = normalizeMediaSearch(document.querySelector('#media-search').value).split(' ').filter(Boolean);
   let visible = 0;
   const visibleItems = [];
   mediaGrid.querySelectorAll('[data-media-type]').forEach(card => {
     const item = mediaItems[Number(card.dataset.mediaIndex)];
     const matchesType = mediaFilter === 'all' || card.dataset.mediaType === mediaFilter;
     const matchesCategory = mediaCategory === 'all' || item.category === mediaCategory;
-    const matchesQuery = !query || [item.title,item.dateSearch,item.categoryLabel,item.alt,'Forza Horizon 4','BTKJ Gang','BMW','Minecraft'].join(' ').toLocaleLowerCase('pl').includes(query);
+    const searchText = normalizeMediaSearch([item.title,item.dateSearch,item.categoryLabel,item.alt,item.tags].join(' '));
+    const matchesQuery = queryTokens.every(token => searchText.includes(token));
     const matches = matchesType && matchesCategory && matchesQuery;
     card.hidden = !matches;
     if (matches) {
