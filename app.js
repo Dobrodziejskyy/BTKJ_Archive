@@ -1,6 +1,6 @@
 const events = [
-  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ × DRL.', icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
-  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ × DRL — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
+  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ × DRL.', icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
+  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'community', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ × DRL — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
 ];
 const list = document.querySelector('#timeline-list');
 function render(filter = 'all') {
@@ -27,6 +27,31 @@ document.querySelectorAll('.filter').forEach(button => button.addEventListener('
   render(button.dataset.filter);
 }));
 render();
+
+const eventsSearch = document.querySelector('#events-search');
+const eventsResults = document.querySelector('#events-results');
+const eventsCount = document.querySelector('#events-count');
+let eventsFilter = 'all';
+function renderEventsPage() {
+  if (!eventsResults) return;
+  const query = eventsSearch.value.trim().toLocaleLowerCase('pl');
+  const visible = events.filter(event => (eventsFilter === 'all' || event.era === eventsFilter) && (!query || Object.values(event).join(' ').toLocaleLowerCase('pl').includes(query)));
+  eventsCount.textContent = visible.length + (visible.length === 1 ? ' wydarzenie' : ' wydarzenia');
+  eventsResults.innerHTML = visible.length ? visible.map(event => `<article class="events-card"><time datetime="${event.date}">${event.displayDate}</time><div><span class="events-tag ${event.theme}">${event.label}</span><h2>${event.title}</h2><p>${event.description}</p></div><a href="#historia" aria-label="Zobacz ${event.title}">›</a></article>`).join('') : `<div class="events-empty"><strong>Brak pasujących wydarzeń</strong><span>Zmień wyszukiwanie lub wybierz inny filtr.</span></div>`;
+}
+eventsSearch?.addEventListener('input', renderEventsPage);
+document.querySelector('#events-filters')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-events-filter]');
+  if (!button) return;
+  eventsFilter = button.dataset.eventsFilter;
+  document.querySelectorAll('[data-events-filter]').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', String(active));
+  });
+  renderEventsPage();
+});
+renderEventsPage();
 
 document.querySelector('#open-settings').addEventListener('click', () => {
   document.querySelector('#settings-dialog').showModal();
@@ -194,7 +219,7 @@ document.addEventListener('click', async event => {
   event.preventDefault();
   await updatePageView(hash);
   const headerHeight = preferences['sticky-nav'] ? document.querySelector('.archive-topbar').offsetHeight : 0;
-  const isPage = ['#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
+  const isPage = ['#wydarzenia','#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
   const top = hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
   window.scrollTo({top: Math.max(0, top), behavior: navigationBehavior()});
   if (location.hash !== hash) {
@@ -433,7 +458,7 @@ renderPromisePanel();
 let currentPageKey;
 let pageTransitionId = 0;
 async function updatePageView(hash = location.hash, animate = true) {
-  const pages = {obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
+  const pages = {wydarzenia:'Wydarzenia',obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
   const requested = hash.replace('#', '');
   const activePage = pages[requested] ? requested : 'home';
   const changingPage = Boolean(currentPageKey && currentPageKey !== activePage);
