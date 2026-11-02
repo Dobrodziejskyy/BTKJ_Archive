@@ -185,14 +185,14 @@ document.querySelectorAll('.dialog-close').forEach(button => {
 });
 
 // Use the same navigation behavior for every internal section link.
-document.addEventListener('click', event => {
+document.addEventListener('click', async event => {
   const link = event.target.closest('a[href^="#"]');
   if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const hash = link.getAttribute('href');
   const target = hash === '#' ? document.documentElement : hash === '#aktorzy' ? document.querySelector('#actors-view') : document.getElementById(hash.slice(1));
   if (!target) return;
   event.preventDefault();
-  updatePageView(hash);
+  await updatePageView(hash);
   const headerHeight = preferences['sticky-nav'] ? document.querySelector('.archive-topbar').offsetHeight : 0;
   const isPage = ['#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
   const top = hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
@@ -348,11 +348,21 @@ promisesView.addEventListener('click', async event => {
 renderPromisePanel();
 
 let currentPageKey;
-function updatePageView(hash = location.hash) {
+let pageTransitionId = 0;
+async function updatePageView(hash = location.hash, animate = true) {
   const pages = {obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
   const requested = hash.replace('#', '');
   const activePage = pages[requested] ? requested : 'home';
-  if (currentPageKey && currentPageKey !== activePage) boostStarfield();
+  const changingPage = Boolean(currentPageKey && currentPageKey !== activePage);
+  const transition = changingPage && animate && motionAllowed();
+  const transitionId = ++pageTransitionId;
+  if (transition) {
+    boostStarfield();
+    document.body.classList.remove('page-entering');
+    document.body.classList.add('page-leaving');
+    await new Promise(resolve => setTimeout(resolve, 210));
+    if (transitionId !== pageTransitionId) return;
+  }
   currentPageKey = activePage;
   document.querySelectorAll('[data-page-view]').forEach(view => {
     const current = view.dataset.pageView === activePage;
@@ -370,10 +380,17 @@ function updatePageView(hash = location.hash) {
     else item.removeAttribute('aria-current');
   });
   document.title = activePage === 'home' ? 'BTKJ × DRL — Nasza historia zostaje' : pages[activePage] + ' — BTKJ × DRL Archive';
+  if (transition) {
+    document.body.classList.remove('page-leaving');
+    document.body.classList.add('page-entering');
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (transitionId !== pageTransitionId) return;
+    document.body.classList.remove('page-entering');
+  }
 }
-window.addEventListener('popstate', () => updatePageView());
-window.addEventListener('hashchange', () => updatePageView());
-updatePageView();
+window.addEventListener('popstate', () => updatePageView(location.hash));
+window.addEventListener('hashchange', () => updatePageView(location.hash));
+updatePageView(location.hash, false);
 
 document.querySelectorAll('.page-tabs').forEach(group => {
   group.addEventListener('click', event => {
