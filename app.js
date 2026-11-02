@@ -1,6 +1,6 @@
 const events = [
-  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ × DRL.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
-  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'beginnings', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ × DRL — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
+  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
+  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'beginnings', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
 ];
 const list = document.querySelector('#timeline-list');
 function render(filter = 'all') {
@@ -302,7 +302,7 @@ try {
 } catch {}
 if (!['all','done','failed'].includes(promiseState.status)) promiseState.status = 'all';
 const promisesView = document.querySelector('#obietnice');
-promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><span aria-hidden="true">▣</span>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ × DRL <span aria-hidden="true">›</span></small></div>
+promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><span aria-hidden="true">▣</span>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ <span aria-hidden="true">›</span></small></div>
   <section class="panel promise-control-panel" aria-label="Narzędzia obietnic">
     <div class="promise-actions">
       <button type="button" data-promise-action="archive" aria-pressed="false"><span aria-hidden="true">▱</span>Archiwum</button>
@@ -497,7 +497,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     if (current) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-  document.title = activePage === 'home' ? 'BTKJ × DRL — Nasza historia zostaje' : pages[activePage] + ' — BTKJ × DRL Archive';
+  document.title = activePage === 'home' ? 'BTKJ × DRL — Nasza historia zostaje' : pages[activePage] + ' — BTKJ Archive';
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');

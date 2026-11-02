@@ -1,4 +1,4 @@
-# BTKJ × DRL — archiwum społeczności
+# BTKJ — archiwum społeczności
 
 Strona główna i interaktywna oś czasu w języku polskim. Pierwszy wpis opisuje początek społeczności: 25 marca 2021 roku na kanale crisuuubtkj na Twitchu.
 
