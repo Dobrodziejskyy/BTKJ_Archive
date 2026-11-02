@@ -250,7 +250,9 @@ const actors = [{
   ]
 }, {
   name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
-  description: 'Wkrótce.', detail: 'Wkrótce.'
+  description: 'OG moderator.',
+  detail: 'Dołączył dokładnie 25 marca podczas pierwszego streama legendarnego pierwszego sezonu streamerskiego crisa.<br><br>Późniejszy założyciel DRL, do którego przeszła spora liczba osób po zakończeniu systematycznego streamowania crisa.<br><br>Pomimo braku dalszych streamów oraz innych form aktywności społeczności dalej robi edity, udziela się na starych społecznościowych Discordach i robi to, co robił wcześniej, bez większej zmiany.',
+  note: '💀 Outlast DLC HOPE', hopeIcon: true, socials: [], linksLabel: 'Brak linków'
 }, {
   name: 'NieczorTM', role: 'drugoplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
   description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
@@ -273,7 +275,7 @@ function renderActors() {
     const card = document.createElement('article');
     card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
     const socialLinks = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${actor.note ? `<p class="actor-note">${actor.note}${actor.hopeIcon ? ` <span class="hope-icon" role="img" aria-label="HOPE, nawiązanie do Half-Life 3" title="HOPE — Half-Life 3">λ³</span>` : ''}</p>` : ''}${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
     container.append(card);
   }
   if (!results.length) {
