@@ -521,7 +521,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     if (current) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-  document.title = activePage === 'home' ? 'BTKJ × DRL — Nasza historia zostaje' : pages[activePage] + ' — BTKJ Archive';
+  document.title = activePage === 'home' ? 'BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');
