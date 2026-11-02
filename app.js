@@ -251,10 +251,16 @@ const actors = [{
 }, {
   name: 'Dobrodziejskyy', role: 'drugoplanowa', initials: 'D', image: './assets/images/pfp-dobrodziejskyy.jpg',
   description: 'Wkrótce.', detail: 'Wkrótce.'
+}, {
+  name: 'NieczorTM', role: 'drugoplanowa', initials: 'N',
+  description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
+  detail: 'Odciął się on od społeczności po incydencie z banowaniem i unbanowaniem toksycznych osób w 2025 roku.',
+  socials: [], linksLabel: 'Brak linków'
 }];
+let actorFilter = 'all';
 function renderActors() {
   const query = document.querySelector('#actor-search').value.trim().toLocaleLowerCase('pl');
-  const results = actors.filter(actor => [actor.name, actor.role, actor.description].join(' ').toLocaleLowerCase('pl').includes(query));
+  const results = actors.filter(actor => (actorFilter === 'all' || actor.role === actorFilter) && [actor.name, actor.role, actor.description, actor.detail].join(' ').toLocaleLowerCase('pl').includes(query));
   const container = document.querySelector('#actors-list');
   container.replaceChildren();
   document.querySelector('#actors-count').textContent = results.length + ' ' + (results.length === 1 ? 'wpis' : results.length % 10 >= 2 && results.length % 10 <= 4 && (results.length % 100 < 12 || results.length % 100 > 14) ? 'wpisy' : 'wpisów');
@@ -262,7 +268,7 @@ function renderActors() {
     const card = document.createElement('article');
     card.className = actor.role === 'pierwszoplanowa' ? 'actor-card featured-actor' : 'actor-card supporting-actor';
     const socialLinks = actor.socials?.map(social => `<a class="actor-link social-${social.type}" href="${social.url}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">●</span>${social.name} ↗</a>`).join('') || '';
-    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : ''}</div></details>`;
+    card.innerHTML = `<details><summary>${actor.image ? `<img class="actor-avatar actor-photo" src="${actor.image}" alt="${actor.name}" width="96" height="96">` : `<span class="actor-avatar" aria-hidden="true">${actor.initials}</span>`}<span class="actor-overview"><strong>${actor.name}</strong><span class="actor-role">${actor.role}</span><span class="actor-description">${actor.description}</span></span><span class="actor-chevron" aria-hidden="true">›</span></summary><div class="actor-detail"><p>${actor.detail}</p>${socialLinks ? `<div class="actor-socials" aria-label="Profile społecznościowe">${socialLinks}</div>` : `<p class="actor-no-links">${actor.linksLabel || 'Brak linków'}</p>`}</div></details>`;
     container.append(card);
   }
   if (!results.length) {
@@ -273,6 +279,17 @@ function renderActors() {
   }
 }
 document.querySelector('#actor-search').addEventListener('input', renderActors);
+document.querySelector('#actor-filters').addEventListener('click', event => {
+  const button = event.target.closest('[data-actor-filter]');
+  if (!button) return;
+  actorFilter = button.dataset.actorFilter;
+  document.querySelectorAll('[data-actor-filter]').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', String(active));
+  });
+  renderActors();
+});
 renderActors();
 
 const vodSearch = document.querySelector('#vod-search');
