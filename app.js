@@ -40,6 +40,7 @@ try {
     if (typeof saved?.[key] === typeof value) preferences[key] = saved[key];
   }
 } catch {}
+preferences.background = 'space';
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function navigationBehavior() {
@@ -50,7 +51,7 @@ function applyPreferences() {
   document.body.classList.toggle('light-theme', !dark);
   document.body.classList.toggle('oled-mode', dark && preferences.oled);
   document.body.classList.toggle('tinted', preferences.tint);
-  document.body.classList.toggle('no-stars', preferences.background === 'none');
+  document.body.classList.remove('no-stars');
   for (const key of ['compact-timeline','hide-decorations','sticky-nav','reduce-motion']) document.body.classList.toggle(key, preferences[key]);
   document.body.classList.toggle('large-text', preferences['text-size'] === 'large');
   document.documentElement.style.scrollBehavior = navigationBehavior() === 'smooth' ? 'smooth' : 'auto';
@@ -65,6 +66,10 @@ function applyPreferences() {
   }
   try {localStorage.setItem(preferenceKey, JSON.stringify(preferences));} catch {}
 }
+const backgroundControl = document.querySelector('#background');
+backgroundControl.querySelector('option[value="none"]')?.remove();
+backgroundControl.disabled = true;
+backgroundControl.closest('.preference').querySelector('p').textContent = 'Pole gwiazd jest zawsze włączone.';
 document.querySelectorAll('[data-preference]').forEach(control => {
   control.addEventListener(control.type === 'range' ? 'input' : 'change', () => {
     preferences[control.id] = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
