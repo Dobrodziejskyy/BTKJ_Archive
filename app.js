@@ -504,6 +504,23 @@ promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-ti
   </section>
   <div class="promise-list-meta"><strong data-promise-count>2 wpisy</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b><time datetime="2026-11-02T19:13">02.11.2026 19:13</time></b></span></div>
   <section class="panel promise-results" data-promise-results aria-live="polite"></section>`;
+const promiseRandomDialog = document.querySelector('#promise-random-dialog');
+const promiseRandomTitle = promiseRandomDialog.querySelector('#promise-random-title');
+const promiseRandomReel = promiseRandomDialog.querySelector('[data-random-reel]');
+const promiseRandomTrack = promiseRandomDialog.querySelector('[data-random-track]');
+const promiseRandomEmpty = promiseRandomDialog.querySelector('[data-random-empty]');
+const promiseRandomPrimary = promiseRandomDialog.querySelector('[data-random-action="primary"]');
+const promiseRandomPrimaryLabel = promiseRandomDialog.querySelector('[data-random-primary-label]');
+const promiseRandomReroll = promiseRandomDialog.querySelector('[data-random-action="reroll"]');
+const promiseRandomActionLabel = promiseRandomDialog.querySelector('[data-random-action-label]');
+const promiseRandomAnnouncement = promiseRandomDialog.querySelector('[data-random-announcement]');
+let promiseRandomAnimation = null;
+let promiseRandomTimers = [];
+let promiseRandomRunId = 0;
+let promiseRandomChosen = null;
+let lastRandomPromiseId = '';
+let promiseRandomSoundMuted = false;
+let promiseRandomAudioContext = null;
 
 function savePromiseState() {
   try {
@@ -530,6 +547,187 @@ function visiblePromiseEntries() {
   const compare = (a, b) => promiseState.sortBy === 'priority' ? a.priority - b.priority : (a[promiseState.sortBy] || '').localeCompare(b[promiseState.sortBy] || '');
   return rows.sort((a, b) => promiseState.sort === 'asc' ? compare(a, b) : compare(b, a));
 }
+function randomPromiseCardMarkup(entry) {
+  const statusLabels = {done:'WYKONANE',failed:'NIEWYKONANE',pending_short:'NIEDŁUGO',pending_long:'DŁUGOTERMINOWA',conditional:'WARUNKOWA',important:'WAŻNA',unknown:'NIE WIADOMO'};
+  const source = entry.clipUrl ? 'ARCHIVE · TWITCH' : entry.source;
+  return `<article class="random-promise-card" data-random-promise-id="${entry.id}"><div class="random-promise-card-top"><span><strong>${entry.date}</strong>${entry.time ? ` <small>${entry.time}</small>` : ''}</span><b class="random-promise-status status-${entry.status}">${statusLabels[entry.status] || entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="random-promise-card-bottom"><span class="promise-priority">Priorytet: <strong aria-label="${entry.priority} na 5">${Array.from({length:5}, (_, index) => `<i${index < entry.priority ? ' class="active"' : ''}></i>`).join('')}</strong></span><span>${source}</span></div></article>`;
+}
+function clearPromiseRandomTimers() {
+  promiseRandomTimers.forEach(timer => clearTimeout(timer));
+  promiseRandomTimers = [];
+}
+function cancelPromiseRandomRun() {
+  promiseRandomRunId += 1;
+  clearPromiseRandomTimers();
+  promiseRandomAnimation?.cancel();
+  promiseRandomAnimation = null;
+}
+function playPromiseRandomTone(final = false) {
+  if (promiseRandomSoundMuted) return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  try {
+    promiseRandomAudioContext ||= new AudioContextClass();
+    promiseRandomAudioContext.resume?.();
+    const now = promiseRandomAudioContext.currentTime;
+    const oscillator = promiseRandomAudioContext.createOscillator();
+    const gain = promiseRandomAudioContext.createGain();
+    oscillator.type = final ? 'sine' : 'triangle';
+    oscillator.frequency.setValueAtTime(final ? 660 : 230, now);
+    if (final) oscillator.frequency.exponentialRampToValueAtTime(880, now + .14);
+    gain.gain.setValueAtTime(final ? .035 : .018, now);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + (final ? .24 : .055));
+    oscillator.connect(gain).connect(promiseRandomAudioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + (final ? .25 : .06));
+  } catch {}
+}
+function promiseRandomScopeLabel() {
+  const hasDetailedFilter = Boolean(
+    promiseState.query.trim() || promiseState.priority !== 'all' || promiseState.platform !== 'all' ||
+    promiseState.pinned || promiseState.modifiedRecently || promiseState.calendar ||
+    promiseState.dateFrom || promiseState.dateTo
+  );
+  if (hasDetailedFilter) return 'aktywny filtr';
+  if (promiseState.archive) return 'archiwum';
+  return {all:'wszystkie',pending:'do wykonania',done:'wykonane',failed:'niewykonane'}[promiseState.status] || 'aktywny filtr';
+}
+function buildPromiseRandomSequence(pool, chosen) {
+  const sequence = [];
+  let previous = null;
+  for (let index = 0; index < 20; index += 1) {
+    const candidates = pool.length > 1 ? pool.filter(entry => entry.id !== previous?.id) : pool;
+    const next = candidates[Math.floor(Math.random() * candidates.length)];
+    sequence.push(next);
+    previous = next;
+  }
+  if (pool.length > 1 && sequence.at(-1).id === chosen.id) sequence[sequence.length - 1] = pool.find(entry => entry.id !== chosen.id);
+  sequence.push(chosen);
+  const trailing = pool.length > 1 ? pool.filter(entry => entry.id !== chosen.id) : pool;
+  sequence.push(trailing[Math.floor(Math.random() * trailing.length)]);
+  return sequence;
+}
+function showPromiseRandomResult(chosen, runId) {
+  if (runId !== promiseRandomRunId || !chosen) return;
+  const statusLabels = {done:'wykonane',failed:'niewykonane',pending_short:'niedługo',pending_long:'długoterminowa',conditional:'warunkowa',important:'ważna',unknown:'nie wiadomo'};
+  lastRandomPromiseId = chosen.id;
+  promiseRandomDialog.dataset.phase = 'result';
+  promiseRandomTrack.setAttribute('aria-hidden', 'false');
+  promiseRandomPrimaryLabel.textContent = 'Otwórz';
+  promiseRandomReroll.hidden = false;
+  promiseRandomReroll.disabled = false;
+  promiseRandomActionLabel.textContent = 'Losuj ponownie';
+  promiseRandomAnnouncement.textContent = `Wylosowano: ${chosen.title}. Data: ${chosen.date}${chosen.time ? `, ${chosen.time}` : ''}. Status: ${statusLabels[chosen.status] || chosen.status}. Priorytet: ${chosen.priority} na 5.`;
+  playPromiseRandomTone(true);
+}
+function settlePromiseRandom(chosen, runId, immediate = false) {
+  if (runId !== promiseRandomRunId || !chosen) return;
+  clearPromiseRandomTimers();
+  promiseRandomAnimation?.cancel();
+  promiseRandomAnimation = null;
+  promiseRandomDialog.dataset.phase = immediate ? 'result' : 'settling';
+  promiseRandomReel.classList.add('is-result');
+  promiseRandomTrack.style.transform = '';
+  promiseRandomTrack.innerHTML = randomPromiseCardMarkup(chosen);
+  if (immediate) showPromiseRandomResult(chosen, runId);
+  else promiseRandomTimers.push(setTimeout(() => showPromiseRandomResult(chosen, runId), 1050));
+}
+function startPromiseRandom() {
+  cancelPromiseRandomRun();
+  const runId = promiseRandomRunId;
+  const pool = visiblePromiseEntries();
+  promiseRandomChosen = null;
+  promiseRandomTrack.style.transform = '';
+  promiseRandomTrack.setAttribute('aria-hidden', 'true');
+  promiseRandomTrack.replaceChildren();
+  promiseRandomReel.classList.remove('is-result','is-empty');
+  promiseRandomEmpty.hidden = true;
+  promiseRandomPrimary.disabled = false;
+  promiseRandomPrimaryLabel.textContent = 'Pomiń animację';
+  promiseRandomReroll.hidden = false;
+  promiseRandomReroll.disabled = true;
+  promiseRandomActionLabel.textContent = 'Losowanie';
+  promiseRandomAnnouncement.textContent = '';
+  if (!promiseRandomDialog.open) promiseRandomDialog.showModal();
+  if (!pool.length) {
+    promiseRandomDialog.dataset.phase = 'empty';
+    promiseRandomTitle.textContent = 'Brak obietnic do losowania';
+    promiseRandomReel.classList.add('is-empty');
+    promiseRandomEmpty.hidden = false;
+    promiseRandomPrimaryLabel.textContent = 'Zamknij';
+    promiseRandomReroll.hidden = true;
+    promiseRandomAnnouncement.textContent = 'Brak obietnic pasujących do aktualnych filtrów.';
+    requestAnimationFrame(() => promiseRandomPrimary.focus());
+    return;
+  }
+  const candidates = pool.length > 1 ? pool.filter(entry => entry.id !== lastRandomPromiseId) : pool;
+  promiseRandomChosen = candidates[Math.floor(Math.random() * candidates.length)];
+  const countLabel = pool.length === 1 ? 'obietnicy' : 'obietnic';
+  promiseRandomTitle.textContent = `Losowanie z ${pool.length} ${countLabel} (${promiseRandomScopeLabel()})`;
+  promiseRandomDialog.dataset.phase = 'rolling';
+  const sequence = buildPromiseRandomSequence(pool, promiseRandomChosen);
+  promiseRandomTrack.innerHTML = sequence.map(randomPromiseCardMarkup).join('');
+  requestAnimationFrame(() => promiseRandomPrimary.focus());
+  if (!motionAllowed() || pool.length === 1) {
+    settlePromiseRandom(promiseRandomChosen, runId, true);
+    return;
+  }
+  const tickDelays = [170,310,450,590,730,870,1010,1160,1320,1490,1680,1890,2120,2380,2670,3010,3400,3840,4310,4740];
+  tickDelays.forEach(delay => promiseRandomTimers.push(setTimeout(() => {
+    if (runId === promiseRandomRunId) playPromiseRandomTone();
+  }, delay)));
+  requestAnimationFrame(() => {
+    if (runId !== promiseRandomRunId) return;
+    const firstCard = promiseRandomTrack.querySelector('.random-promise-card');
+    const gap = parseFloat(getComputedStyle(promiseRandomTrack).rowGap) || 12;
+    const cardHeight = firstCard.getBoundingClientRect().height;
+    const step = cardHeight + gap;
+    const chosenIndex = sequence.length - 2;
+    const centeredOffset = Math.max(0, (promiseRandomReel.clientHeight - cardHeight) / 2);
+    const distance = Math.max(0, chosenIndex * step - centeredOffset);
+    promiseRandomAnimation = promiseRandomTrack.animate([
+      {transform:'translateY(0)'},
+      {transform:`translateY(-${distance}px)`}
+    ], {duration:5000, easing:'cubic-bezier(.08,.72,.12,1)', fill:'forwards'});
+    promiseRandomAnimation.finished.then(() => settlePromiseRandom(promiseRandomChosen, runId)).catch(() => {});
+  });
+}
+function openPromiseRandomResult() {
+  const chosenId = promiseRandomChosen?.id;
+  if (!chosenId) return;
+  promiseRandomDialog.close();
+  renderPromisePanel();
+  const card = promisesView.querySelector(`[data-promise-id="${chosenId}"]`);
+  if (!card) return;
+  card.tabIndex = -1;
+  card.classList.add('is-random');
+  card.focus({preventScroll:true});
+  requestAnimationFrame(() => {
+    card.scrollIntoView({behavior:navigationBehavior(), block:'center'});
+    setTimeout(() => card.classList.remove('is-random'), 1200);
+  });
+}
+promiseRandomDialog.addEventListener('click', event => {
+  const button = event.target.closest('[data-random-action]');
+  if (!button) return;
+  const action = button.dataset.randomAction;
+  if (action === 'close') promiseRandomDialog.close();
+  if (action === 'sound') {
+    promiseRandomSoundMuted = !promiseRandomSoundMuted;
+    button.classList.toggle('is-muted', promiseRandomSoundMuted);
+    button.setAttribute('aria-pressed', String(promiseRandomSoundMuted));
+    button.setAttribute('aria-label', promiseRandomSoundMuted ? 'Włącz dźwięk losowania' : 'Wycisz dźwięk losowania');
+    if (!promiseRandomSoundMuted) playPromiseRandomTone();
+  }
+  if (action === 'primary') {
+    const phase = promiseRandomDialog.dataset.phase;
+    if (phase === 'rolling' || phase === 'settling') settlePromiseRandom(promiseRandomChosen, promiseRandomRunId, true);
+    else if (phase === 'result') openPromiseRandomResult();
+    else promiseRandomDialog.close();
+  }
+  if (action === 'reroll' && !button.disabled) startPromiseRandom();
+});
+promiseRandomDialog.addEventListener('close', cancelPromiseRandomRun);
 function renderPromisePopover() {
   const popover = promisesView.querySelector('[data-promise-popover]');
   const panel = promiseState.openFilter;
@@ -629,12 +827,7 @@ promisesView.addEventListener('click', async event => {
   }
   if (action === 'reset') promiseState = {...promiseState, query:'', archive:false, sortBy:'promiseDate', sort:'desc', status:'all', priority:'all', platform:'all', pinned:false, modifiedRecently:false, dateType:'promiseDate', dateFrom:'', dateTo:'', calendar:'', openFilter:''};
   if (action === 'random') {
-    const rows = visiblePromiseEntries();
-    renderPromisePanel();
-    const chosen = rows.length ? promisesView.querySelector(`[data-promise-id="${rows[Math.floor(Math.random() * rows.length)].id}"]`) : null;
-    chosen?.scrollIntoView({behavior:navigationBehavior(), block:'center'});
-    chosen?.classList.add('is-random');
-    setTimeout(() => chosen?.classList.remove('is-random'), 900);
+    startPromiseRandom();
     return;
   }
   renderPromisePanel();
