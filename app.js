@@ -27,13 +27,6 @@ document.querySelectorAll('.filter').forEach(button => button.addEventListener('
 }));
 render();
 
-const sectionDialog = document.querySelector('#section-dialog');
-document.querySelectorAll('[data-section]').forEach(button => {
-  button.addEventListener('click', () => {
-    document.querySelector('#section-dialog-title').textContent = button.dataset.section;
-    sectionDialog.showModal();
-  });
-});
 document.querySelector('#open-settings').addEventListener('click', () => {
   document.querySelector('#settings-dialog').showModal();
 });
@@ -131,7 +124,8 @@ document.addEventListener('click', event => {
   event.preventDefault();
   updatePageView(hash);
   const headerHeight = preferences['sticky-nav'] ? document.querySelector('.archive-topbar').offsetHeight : 0;
-  const top = hash === '#' || hash === '#aktorzy' ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
+  const isPage = ['#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
+  const top = hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
   window.scrollTo({top: Math.max(0, top), behavior: navigationBehavior()});
   if (location.hash !== hash) {
     try { history.pushState(null, '', hash); } catch {}
@@ -176,20 +170,40 @@ function renderActors() {
 document.querySelector('#actor-search').addEventListener('input', renderActors);
 renderActors();
 function updatePageView(hash = location.hash) {
-  const isActors = hash === '#aktorzy';
-  document.querySelector('#home-view').hidden = isActors;
-  document.querySelector('#actors-view').hidden = !isActors;
+  const pages = {obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
+  const requested = hash.replace('#', '');
+  const activePage = pages[requested] ? requested : 'home';
+  document.querySelectorAll('[data-page-view]').forEach(view => {
+    const current = view.dataset.pageView === activePage;
+    view.hidden = !current;
+    if (current) {
+      view.classList.remove('view-entering');
+      void view.offsetWidth;
+      view.classList.add('view-entering');
+    }
+  });
   document.querySelectorAll('.archive-nav .topbar-item').forEach(item => {
-    const current = isActors ? item.id === 'actors-nav' : item.getAttribute('href') === '#';
+    const current = activePage === 'home' ? item.getAttribute('href') === '#' : item.getAttribute('href') === '#' + activePage;
     item.classList.toggle('is-current', current);
     if (current) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-  document.title = isActors ? 'Aktorzy — BTKJ × DRL Archive' : 'BTKJ × DRL — Nasza historia zostaje';
+  document.title = activePage === 'home' ? 'BTKJ × DRL — Nasza historia zostaje' : pages[activePage] + ' — BTKJ × DRL Archive';
 }
 window.addEventListener('popstate', () => updatePageView());
 window.addEventListener('hashchange', () => updatePageView());
 updatePageView();
+
+document.querySelectorAll('.page-tabs').forEach(group => {
+  group.addEventListener('click', event => {
+    const selected = event.target.closest('button');
+    if (!selected) return;
+    group.querySelectorAll('button').forEach(button => {
+      button.classList.toggle('active', button === selected);
+      button.setAttribute('aria-pressed', String(button === selected));
+    });
+  });
+});
 
 // Close on a backdrop click, but keep interaction inside the dialog intact.
 document.querySelectorAll('dialog').forEach(dialog => {
@@ -255,7 +269,7 @@ function animateNumber(element, target, format, duration = 900) {
   requestAnimationFrame(step);
 }
 function startPageAnimations() {
-  const revealItems = document.querySelectorAll('#home-view>section, .actors-view>*, footer');
+  const revealItems = document.querySelectorAll('#home-view>section, .actors-view>*, .archive-page>*, footer');
   revealItems.forEach(item => item.classList.add('reveal-item'));
   if (!motionAllowed() || !('IntersectionObserver' in window)) {
     revealItems.forEach(item => item.classList.add('is-visible'));
