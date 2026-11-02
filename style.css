@@ -136,3 +136,8 @@ body.is-loading{overflow:hidden}.site-loader{position:fixed;inset:0;z-index:1000
 
 /* Rozliczony bilans ma dwa osobne, semantyczne obramowania zamiast jednej czerwonej ramki. */
 .balance-track:not(.is-empty){gap:3px;overflow:visible;border:0;background:transparent;box-shadow:none}.balance-track:not(.is-empty)>span{border:1px solid}.balance-track:not(.is-empty)>.balance-done{border-color:#18d466;border-radius:999px 0 0 999px;background:linear-gradient(180deg,#0a8e42,#086b34);box-shadow:inset 0 0 0 1px #0d5f30,0 0 7px #0cae4f44}.balance-track:not(.is-empty)>.balance-failed{border-color:#df2d59;border-radius:0 999px 999px 0;background:linear-gradient(180deg,#73162d,#4a101f);box-shadow:inset 0 0 0 1px #4e1021,0 0 7px #bd305344}.balance-track:not(.is-empty)>span[data-width="0"]{display:none}.balance-track.is-all-done>.balance-done,.balance-track.is-all-failed>.balance-failed{border-radius:999px}.light-theme .balance-track:not(.is-empty)>.balance-done{border-color:#08a94b}.light-theme .balance-track:not(.is-empty)>.balance-failed{border-color:#ca244d}.btkj-theme .balance-track:not(.is-empty)>.balance-done{border-color:#28e891}.btkj-theme .balance-track:not(.is-empty)>.balance-failed{border-color:#eb3762}
+
+/* Paski rosną bez dodatkowego błysku, który tworzył samotną smugę na tle strony. */
+.balance-track:after{display:none}
+
+.balance-track:not(.is-empty)>span{opacity:0;transition:none}.balance-track.balance-values-visible:not(.is-empty)>span{opacity:1;transition:width 1.15s cubic-bezier(.22,1,.36,1),opacity .12s ease}@media(prefers-reduced-motion:reduce){.balance-track.balance-values-visible:not(.is-empty)>span{transition:none}}.reduce-motion .balance-track.balance-values-visible:not(.is-empty)>span{transition:none}

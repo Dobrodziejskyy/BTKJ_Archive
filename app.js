@@ -20,7 +20,10 @@ function dismissSiteLoader() {
   siteLoaderDismissed = true;
   siteLoader.classList.add('is-leaving');
   document.body.classList.remove('is-loading');
-  setTimeout(() => siteLoader.remove(), 420);
+  setTimeout(() => {
+    siteLoader.remove();
+    document.dispatchEvent(new Event('btkj:loader-hidden'));
+  }, 420);
 }
 function queueSiteLoaderDismissal() {
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -171,7 +174,6 @@ const starContext = starCanvas.getContext('2d');
 const stars = Array.from({length: 180}, () => ({}));
 let starWidth = 0;
 let starHeight = 0;
-let starBoost = 1;
 let lastStarFrame = performance.now();
 function resetStar(star, randomDepth = true) {
   star.x = (Math.random() - .5) * 2.2;
@@ -189,17 +191,13 @@ function resizeStarfield() {
   starCanvas.style.height = starHeight + 'px';
   starContext.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
-function boostStarfield() {
-  if (!reducedMotion.matches) starBoost = 5.5;
-}
 function drawStarfield(now) {
   const elapsed = Math.min(34, now - lastStarFrame);
   lastStarFrame = now;
   starContext.clearRect(0, 0, starWidth, starHeight);
   const centerX = starWidth / 2;
   const centerY = starHeight / 2;
-  const depthStep = reducedMotion.matches ? 0 : .00022 * elapsed * starBoost;
-  starBoost += (1 - starBoost) * Math.min(1, elapsed / 420);
+  const depthStep = reducedMotion.matches ? 0 : .00022 * elapsed;
   for (const star of stars) {
     const previousZ = star.z;
     star.z -= depthStep;
@@ -893,7 +891,6 @@ async function updatePageView(hash = location.hash, animate = true) {
   const transition = changingPage && animate && motionAllowed();
   const transitionId = ++pageTransitionId;
   if (transition) {
-    boostStarfield();
     document.body.classList.remove('page-entering');
     document.body.classList.add('page-leaving');
     await new Promise(resolve => setTimeout(resolve, 210));
@@ -973,13 +970,13 @@ function calculatePromiseBalance(records, now = new Date()) {
   };
   return {all: summarize(records), recent: summarize(records.filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row.resolvedAt) && row.resolvedAt >= start && row.resolvedAt <= end))};
 }
-function refreshPromiseBalances(applyWidths = false) {
+function refreshPromiseBalances(applyWidths = false, applyValues = true) {
   promiseBalances = calculatePromiseBalance(promiseEntries);
   const all = promiseBalances.all;
   const promiseStats = {pending: all.total - all.resolved, done: all.done, failed: all.failed, total: all.total};
   document.querySelectorAll('[data-promise-stat]').forEach(element => {
     const value = promiseStats[element.dataset.promiseStat] ?? 0;
-    element.textContent = value;
+    if (applyValues) element.textContent = value;
     element.dataset.countTo = value;
     element.setAttribute('aria-label', String(value));
   });
@@ -993,10 +990,12 @@ function refreshPromiseBalances(applyWidths = false) {
     completed.dataset.countTo = balance.done;
     uncompleted.dataset.countTo = balance.failed;
     total.dataset.countTo = balance.total;
-    percent.textContent = balance.percent === null ? '—' : balance.percent + '%';
-    completed.textContent = '✓ ' + balance.done + ' Wykonane';
-    uncompleted.textContent = balance.failed + ' Niewykonane ×';
-    total.textContent = balance.total + ' łącznie';
+    if (applyValues) {
+      percent.textContent = balance.percent === null ? '—' : balance.percent + '%';
+      completed.textContent = '✓ ' + balance.done + ' Wykonane';
+      uncompleted.textContent = balance.failed + ' Niewykonane ×';
+      total.textContent = balance.total + ' łącznie';
+    }
     const track = card.querySelector('.balance-track');
     card.classList.toggle('is-empty', !balance.resolved);
     track.classList.toggle('is-empty', !balance.resolved);
@@ -1008,12 +1007,13 @@ function refreshPromiseBalances(applyWidths = false) {
     card.querySelector('.balance-done').dataset.width = doneWidth;
     card.querySelector('.balance-failed').dataset.width = failedWidth;
     if (applyWidths) {
+      track.classList.add('balance-values-visible');
       card.querySelector('.balance-done').style.width = doneWidth + '%';
       card.querySelector('.balance-failed').style.width = failedWidth + '%';
     }
   });
 }
-refreshPromiseBalances();
+refreshPromiseBalances(false, false);
 
 function motionAllowed() {
   return !preferences['reduce-motion'] && !reducedMotion.matches;
@@ -1033,8 +1033,10 @@ function animateNumber(element, target, format, duration = 900) {
     element.textContent = format(target);
     return;
   }
-  const start = performance.now();
+  element.textContent = format(0);
+  let start;
   const step = now => {
+    start ??= now;
     const progress = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - progress, 3);
     element.textContent = format(Math.round(target * eased));
@@ -1043,6 +1045,8 @@ function animateNumber(element, target, format, duration = 900) {
   requestAnimationFrame(step);
 }
 function startPageAnimations() {
+  if (startPageAnimations.started) return;
+  startPageAnimations.started = true;
   const revealItems = document.querySelectorAll('#home-view>section, .actors-view>*, .archive-page>*, footer');
   revealItems.forEach(item => item.classList.add('reveal-item'));
   if (!motionAllowed() || !('IntersectionObserver' in window)) {
@@ -1058,21 +1062,25 @@ function startPageAnimations() {
     revealItems.forEach(item => observer.observe(item));
   }
 
-  document.querySelectorAll('.stats .stat-card>strong').forEach(number => {
-    const target = Number(number.textContent) || 0;
+  document.querySelectorAll('.stats .stat-card>strong').forEach((number, index) => {
+    const target = Number(number.dataset.countTo) || 0;
     number.setAttribute('aria-label', String(target));
-    animateNumber(number, target, value => String(value), 1000);
+    setTimeout(() => animateNumber(number, target, value => String(value), 1000), motionAllowed() ? 180 + index * 70 : 0);
   });
   document.querySelectorAll('[data-balance]').forEach((card, index) => {
     const balance = promiseBalances[card.dataset.balance];
-    animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
-    animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
-    animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
-    animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
     setTimeout(() => {
-      card.querySelectorAll('.balance-track>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
-      card.querySelector('.balance-track').classList.add('balance-animated');
-    }, motionAllowed() ? 180 + index * 140 : 0);
+      animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
+      animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
+      animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
+      animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
+    }, motionAllowed() ? 220 + index * 120 : 0);
+    setTimeout(() => {
+      const track = card.querySelector('.balance-track');
+      track.classList.add('balance-values-visible');
+      track.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
+    }, motionAllowed() ? 420 + index * 140 : 0);
   });
 }
-requestAnimationFrame(startPageAnimations);
+if (siteLoader?.isConnected) document.addEventListener('btkj:loader-hidden', () => requestAnimationFrame(startPageAnimations), {once:true});
+else requestAnimationFrame(startPageAnimations);
