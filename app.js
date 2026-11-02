@@ -76,15 +76,16 @@ try {
     if (typeof saved?.[key] === typeof value) preferences[key] = saved[key];
   }
 } catch {}
-const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+if (!['dark','light','btkj'].includes(preferences.theme)) preferences.theme = 'dark';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function navigationBehavior() {
   return preferences['smooth-scroll'] && !preferences['reduce-motion'] && !reducedMotion.matches ? 'smooth' : 'instant';
 }
 function applyPreferences() {
-  const dark = preferences.theme === 'system' ? systemTheme.matches : preferences.theme !== 'light';
-  document.body.classList.toggle('light-theme', !dark);
-  document.body.classList.toggle('oled-mode', dark && preferences.oled);
+  const light = preferences.theme === 'light';
+  document.body.classList.toggle('light-theme', light);
+  document.body.classList.toggle('btkj-theme', preferences.theme === 'btkj');
+  document.body.classList.toggle('oled-mode', preferences.theme === 'dark' && preferences.oled);
   document.body.classList.toggle('tinted', preferences.tint);
   for (const key of ['compact-timeline','hide-decorations','sticky-nav','reduce-motion']) document.body.classList.toggle(key, preferences[key]);
   document.body.classList.toggle('large-text', preferences['text-size'] === 'large');
@@ -176,7 +177,6 @@ document.querySelectorAll('[data-preference]').forEach(control => {
     applyPreferences();
   });
 });
-systemTheme.addEventListener('change', applyPreferences);
 reducedMotion.addEventListener('change', applyPreferences);
 applyPreferences();
 let activeSettingsPage = '0';
