@@ -482,14 +482,14 @@ const promiseEntries = [{
 }];
 let promiseBalances = null;
 const promiseStateKey = 'btkj-drl-promise-panel-v1';
-let promiseState = {query:'', compact:false, remember:false, archive:false, sortBy:'promiseDate', sort:'desc', status:'all', priority:'all', platform:'all', pinned:false, modifiedRecently:false, dateType:'promiseDate', dateFrom:'', dateTo:'', calendar:'', stats:false, openFilter:''};
+let promiseState = {query:'', compact:false, remember:false, archive:false, sortBy:'promiseDate', sort:'desc', status:'all', priority:'all', platform:'all', pinned:false, modifiedRecently:false, dateType:'promiseDate', dateFrom:'', dateTo:'', calendar:'', openFilter:''};
 try {
   const saved = JSON.parse(localStorage.getItem(promiseStateKey) || '{}');
   if (saved.remember) promiseState = {...promiseState, ...saved, remember:true};
 } catch {}
 if (!['all','pending','done','failed'].includes(promiseState.status)) promiseState.status = 'all';
 const promisesView = document.querySelector('#obietnice');
-promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><span aria-hidden="true">▣</span>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ <span aria-hidden="true">›</span></small></div>
+promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><svg class="page-title-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6zM14 2v5h4M9 11h6M9 15h6M9 19h4"/></svg>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ <span aria-hidden="true">›</span></small></div>
   <section class="panel promise-control-panel" aria-label="Narzędzia obietnic">
     <div class="promise-actions">
       <button type="button" data-promise-action="archive" aria-pressed="false"><span aria-hidden="true">▱</span>Archiwum</button>
@@ -497,14 +497,12 @@ promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-ti
       <button type="button" data-promise-action="calendar" aria-expanded="false"><span aria-hidden="true">▣</span>Kalendarz</button>
       <label class="promise-switch">Widok kompaktowy <input type="checkbox" data-promise-toggle="compact" role="switch"><i></i></label>
       <label class="promise-switch">Pamiętaj filtry <input type="checkbox" data-promise-toggle="remember" role="switch"><i></i></label>
-      <button class="promise-stats-button" type="button" data-promise-action="stats" aria-expanded="false"><span aria-hidden="true">⌁</span>Statystyki</button>
     </div>
     <div class="promise-calendar" hidden><label>Data <input type="date" data-promise-calendar></label><button type="button" data-promise-action="clear-calendar">Wyczyść</button></div>
     <div class="promise-search-row"><label class="archive-search"><span aria-hidden="true">⌕</span><input type="search" data-promise-search placeholder="Szukaj w obietnicach..." aria-label="Szukaj w obietnicach"></label><div class="promise-view-actions" aria-label="Widok i filtry"><button type="button" data-promise-action="open-filter" data-filter-panel="status" aria-label="Wybierz status" title="Status" aria-expanded="false">⌘</button><button type="button" data-promise-action="open-filter" data-filter-panel="priority" aria-label="Wybierz priorytet" title="Priorytet" aria-expanded="false">▥</button><button type="button" data-promise-action="open-filter" data-filter-panel="sort" aria-label="Wybierz sortowanie" title="Sortowanie" aria-expanded="false">⇅</button><button type="button" data-promise-action="open-filter" data-filter-panel="more" aria-label="Więcej filtrów" title="Więcej filtrów" aria-expanded="false">▽</button><button type="button" data-promise-action="reset" aria-label="Resetuj wszystkie filtry" title="Resetuj wszystkie filtry">↻</button></div></div>
     <div class="promise-filter-popover" data-promise-popover hidden></div>
-    <div class="promise-statistics" hidden><div><strong data-stat="all">2</strong><span>testowe</span></div><div><strong data-stat="visible">2</strong><span>testowe</span></div><div><strong>testowe</strong><span>testowe</span></div></div>
   </section>
-  <div class="promise-list-meta"><strong data-promise-count>2 wpisy</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b>testowe</b></span></div>
+  <div class="promise-list-meta"><strong data-promise-count>2 wpisy</strong><span>STATUS: <b data-promise-status>wszystkie</b></span><span>↻ Ostatnia aktualizacja: <b><time datetime="2026-11-02T19:13">02.11.2026 19:13</time></b></span></div>
   <section class="panel promise-results" data-promise-results aria-live="polite"></section>`;
 
 function savePromiseState() {
@@ -565,15 +563,11 @@ function renderPromisePanel() {
   promisesView.querySelector('[data-promise-count]').textContent = `${rows.length} ${countLabel}`;
   const filterLabels = {all:'wszystkie',pending:'do wykonania',done:'wykonane',failed:'niewykonane',pending_short:'do wykonania niedługo',pending_long:'do wykonania długoterminowo',conditional:'warunkowe',important:'ważne do odwołania',unknown:'nie wiadomo'};
   promisesView.querySelector('[data-promise-status]').textContent = promiseState.archive ? 'archiwum' : filterLabels[promiseState.status] || promiseState.status;
-  promisesView.querySelector('[data-stat="all"]').textContent = promiseEntries.length;
-  promisesView.querySelector('[data-stat="visible"]').textContent = rows.length;
   promisesView.querySelector('[data-promise-search]').value = promiseState.query;
   promisesView.querySelector('[data-promise-toggle="compact"]').checked = promiseState.compact;
   promisesView.querySelector('[data-promise-toggle="remember"]').checked = promiseState.remember;
   promisesView.querySelector('[data-promise-calendar]').value = promiseState.calendar;
   promisesView.querySelector('[data-promise-action="archive"]').setAttribute('aria-pressed', String(promiseState.archive));
-  promisesView.querySelector('.promise-statistics').hidden = !promiseState.stats;
-  promisesView.querySelectorAll('[data-promise-action="stats"]').forEach(button => button.setAttribute('aria-expanded', String(promiseState.stats)));
   renderPromisePopover();
   if (promiseBalances) refreshPromiseBalances(true);
   savePromiseState();
@@ -623,7 +617,6 @@ promisesView.addEventListener('click', async event => {
     return;
   }
   if (action === 'clear-calendar') promiseState.calendar = '';
-  if (action === 'stats') promiseState.stats = !promiseState.stats;
   if (action === 'open-filter') {
     promiseState.openFilter = promiseState.openFilter === button.dataset.filterPanel ? '' : button.dataset.filterPanel;
     renderPromisePanel();
@@ -795,6 +788,16 @@ refreshPromiseBalances();
 function motionAllowed() {
   return !preferences['reduce-motion'] && !reducedMotion.matches;
 }
+document.querySelector('.archive-topbar')?.addEventListener('click', event => {
+  const item = event.target.closest('.topbar-item');
+  if (!item || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || !motionAllowed()) return;
+  const icon = item.querySelector('svg');
+  if (!icon) return;
+  icon.classList.remove('nav-icon-activated');
+  void icon.offsetWidth;
+  icon.classList.add('nav-icon-activated');
+  icon.addEventListener('animationend', () => icon.classList.remove('nav-icon-activated'), {once:true});
+});
 function animateNumber(element, target, format, duration = 900) {
   if (!motionAllowed() || target === 0) {
     element.textContent = format(target);
