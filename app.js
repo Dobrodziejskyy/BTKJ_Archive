@@ -311,38 +311,6 @@ function renderActors() {
       const player = talentDetails.querySelector('iframe');
       if (player) player.src = talentDetails.open ? player.dataset.src : '';
     });
-    const actorDetails = card.querySelector(':scope > details');
-    const actorSummary = actorDetails.querySelector(':scope > summary');
-    actorSummary.addEventListener('click', event => {
-      if (actorDetails.open || document.body.classList.contains('actor-transitioning')) return;
-      event.preventDefault();
-      const avatar = actorSummary.querySelector('.actor-avatar');
-      if (preferences['reduce-motion'] || matchMedia('(prefers-reduced-motion: reduce)').matches || !avatar) {
-        actorDetails.open = true;
-        return;
-      }
-      const rect = avatar.getBoundingClientRect();
-      const transition = document.createElement('div');
-      transition.className = 'actor-transition';
-      const flyingAvatar = avatar.cloneNode(true);
-      flyingAvatar.classList.add('actor-transition-avatar');
-      flyingAvatar.style.setProperty('--actor-x', `${rect.left}px`);
-      flyingAvatar.style.setProperty('--actor-y', `${rect.top}px`);
-      flyingAvatar.style.setProperty('--actor-size', `${rect.width}px`);
-      transition.append(flyingAvatar);
-      document.body.append(transition);
-      document.body.classList.add('actor-transitioning');
-      requestAnimationFrame(() => transition.classList.add('is-running'));
-      setTimeout(() => {
-        actorDetails.open = true;
-        card.scrollIntoView({ behavior: 'auto', block: 'center' });
-        transition.classList.add('is-finishing');
-      }, 620);
-      setTimeout(() => {
-        transition.remove();
-        document.body.classList.remove('actor-transitioning');
-      }, 980);
-    });
     container.append(card);
   }
   if (!results.length) {
