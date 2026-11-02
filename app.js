@@ -256,6 +256,11 @@ const actors = [{
   description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
   detail: 'Odciął się on od społeczności po incydencie z banowaniem i unbanowaniem toksycznych osób w 2025 roku.',
   socials: [], linksLabel: 'Brak linków'
+}, {
+  name: 'Ferdynant', role: 'drugoplanowa', initials: 'F',
+  description: 'OG moderator.',
+  detail: "Aktualnie przesiaduje u Svitalskiego i Randombruce'a. Nieaktywny od dłuższego czasu.",
+  socials: [], linksLabel: 'Brak linków'
 }];
 let actorFilter = 'all';
 function renderActors() {
