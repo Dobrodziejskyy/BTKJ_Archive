@@ -319,12 +319,12 @@ const actors = [{
   detail: 'Dołączył dokładnie 25 marca podczas pierwszego streama legendarnego pierwszego sezonu streamerskiego crisa.<br><br>Późniejszy założyciel DRL, do którego przeszła spora liczba osób po zakończeniu systematycznego streamowania crisa.<br><br>Pomimo braku dalszych streamów oraz innych form aktywności społeczności dalej robi edity, udziela się na starych społecznościowych Discordach i robi to, co robił wcześniej, bez większej zmiany.',
   note: 'Outlast DLC HOPE', hopeIcon: true, socials: [], linksLabel: 'Brak linków'
 }, {
-  slug: 'nieczortm', name: 'NieczorTM', role: 'drugoplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
+  slug: 'nieczortm', name: 'NieczorTM', role: 'trzecioplanowa', initials: 'N', image: './assets/images/pfp-nieczortm.png',
   description: 'OG widz z czasów przed rozpoczęciem legendarnego okresu streamów crisa.',
   detail: 'Odciął się on od społeczności po incydencie z banowaniem i unbanowaniem toksycznych osób w 2025 roku.',
   socials: [], linksLabel: 'Brak linków'
 }, {
-  slug: 'ferdynant', name: 'Ferdynant', role: 'drugoplanowa', initials: 'F', image: './assets/images/pfp-ferdynant.png',
+  slug: 'ferdynant', name: 'Ferdynant', role: 'trzecioplanowa', initials: 'F', image: './assets/images/pfp-ferdynant.png',
   description: 'OG moderator.',
   detail: "Aktualnie przesiaduje u Svitalskiego i Randombruce'a. Nieaktywny od dłuższego czasu.",
   talentHunter: 'Parę razy zespotowany podczas przeglądu Twitch na streamach osób mało znanych, wyglądających i contentem przypominających Makajlera, Rafatusa i Rafonixa.',
