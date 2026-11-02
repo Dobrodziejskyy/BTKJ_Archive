@@ -436,6 +436,8 @@ function refreshPromiseBalances(applyWidths = false) {
     total.textContent = balance.total + ' łącznie';
     const track = card.querySelector('.balance-track');
     track.classList.toggle('is-empty', !balance.resolved);
+    track.classList.toggle('is-all-done', balance.resolved > 0 && balance.done === balance.resolved);
+    track.classList.toggle('is-all-failed', balance.resolved > 0 && balance.failed === balance.resolved);
     track.setAttribute('aria-label', `${balance.total} łącznie, ${balance.done} wykonane, ${balance.failed} niewykonane${balance.percent === null ? '' : `; ${balance.percent}% wykonanych`}`);
     const doneWidth = balance.resolved ? balance.done / balance.resolved * 100 : 0;
     const failedWidth = balance.resolved ? balance.failed / balance.resolved * 100 : 0;
