@@ -367,6 +367,7 @@ const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
 const mediaDialogImage = document.querySelector('#media-lightbox-image');
 let activeMediaIndex = 0;
+let mediaFilter = 'all';
 function showMediaItem(index) {
   activeMediaIndex = (index + mediaItems.length) % mediaItems.length;
   const item = mediaItems[activeMediaIndex];
@@ -376,7 +377,9 @@ function showMediaItem(index) {
   const mediaDate = document.querySelector('#media-lightbox-date');
   mediaDate.textContent = item.created;
   mediaDate.dateTime = item.datetime;
-  document.querySelector('#media-lightbox-position').textContent = `${activeMediaIndex + 1} / ${mediaItems.length}`;
+  const visibleIndexes = [...mediaGrid.querySelectorAll('[data-media-index]:not([hidden])')].map(card => Number(card.dataset.mediaIndex));
+  const visiblePosition = visibleIndexes.indexOf(activeMediaIndex);
+  document.querySelector('#media-lightbox-position').textContent = `${visiblePosition + 1} / ${visibleIndexes.length}`;
 }
 mediaGrid?.addEventListener('click', event => {
   const card = event.target.closest('[data-media-index]');
@@ -386,26 +389,49 @@ mediaGrid?.addEventListener('click', event => {
 });
 mediaDialog?.addEventListener('click', event => {
   const step = event.target.closest('[data-media-step]');
-  if (step) showMediaItem(activeMediaIndex + Number(step.dataset.mediaStep));
+  if (step) stepVisibleMedia(Number(step.dataset.mediaStep));
 });
 mediaDialog?.addEventListener('keydown', event => {
-  if (event.key === 'ArrowLeft') showMediaItem(activeMediaIndex - 1);
-  if (event.key === 'ArrowRight') showMediaItem(activeMediaIndex + 1);
+  if (event.key === 'ArrowLeft') stepVisibleMedia(-1);
+  if (event.key === 'ArrowRight') stepVisibleMedia(1);
 });
+function stepVisibleMedia(step) {
+  const visibleIndexes = [...mediaGrid.querySelectorAll('[data-media-index]:not([hidden])')].map(card => Number(card.dataset.mediaIndex));
+  if (!visibleIndexes.length) return;
+  const currentPosition = Math.max(0, visibleIndexes.indexOf(activeMediaIndex));
+  showMediaItem(visibleIndexes[(currentPosition + step + visibleIndexes.length) % visibleIndexes.length]);
+}
 document.querySelector('#media-filters')?.addEventListener('click', event => {
   const button = event.target.closest('[data-media-filter]');
   if (!button) return;
-  const filter = button.dataset.mediaFilter;
+  mediaFilter = button.dataset.mediaFilter;
+  document.querySelectorAll('[data-media-filter]').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', String(active));
+  });
+  renderMediaCatalog();
+  document.querySelector('#media-collection').scrollIntoView({behavior:navigationBehavior(), block:'start'});
+});
+function renderMediaCatalog() {
+  const query = document.querySelector('#media-search').value.trim().toLocaleLowerCase('pl');
   let visible = 0;
   mediaGrid.querySelectorAll('[data-media-type]').forEach(card => {
-    const matches = filter === 'all' || card.dataset.mediaType === filter;
+    const item = mediaItems[Number(card.dataset.mediaIndex)];
+    const matchesType = mediaFilter === 'all' || card.dataset.mediaType === mediaFilter;
+    const matchesQuery = !query || [item.title,item.created,item.alt,'Forza Horizon 4','BTKJ Gang','BMW'].join(' ').toLocaleLowerCase('pl').includes(query);
+    const matches = matchesType && matchesQuery;
     card.hidden = !matches;
     if (matches) visible += 1;
   });
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
-  document.querySelector('.media-summary strong').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
-});
+  const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
+  document.querySelector('#media-group-title').textContent = labels[mediaFilter];
+  document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
+}
+document.querySelector('#media-search')?.addEventListener('input', renderMediaCatalog);
+renderMediaCatalog();
 
 const vodSearch = document.querySelector('#vod-search');
 const vodSeasonCards = [...document.querySelectorAll('.vod-season-card')];
