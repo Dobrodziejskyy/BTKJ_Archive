@@ -32,7 +32,7 @@ document.querySelector('#open-settings').addEventListener('click', () => {
 });
 
 const preferenceKey = 'btkj-drl-preferences-v1';
-const defaults = {theme:'dark', oled:true, brightness:3, accent:'blue', tint:false, 'compact-timeline':false, 'text-size':'normal', 'sticky-nav':false, 'smooth-scroll':true, 'hide-decorations':false, 'reduce-motion':false};
+const defaults = {theme:'dark', oled:true, brightness:3, tint:false, 'compact-timeline':false, 'text-size':'normal', 'sticky-nav':false, 'smooth-scroll':true, 'hide-decorations':false, 'reduce-motion':false};
 let preferences = {...defaults};
 try {
   const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
@@ -53,8 +53,7 @@ function applyPreferences() {
   for (const key of ['compact-timeline','hide-decorations','sticky-nav','reduce-motion']) document.body.classList.toggle(key, preferences[key]);
   document.body.classList.toggle('large-text', preferences['text-size'] === 'large');
   document.documentElement.style.scrollBehavior = navigationBehavior() === 'smooth' ? 'smooth' : 'auto';
-  const colors = {blue:'122,146,228',pink:'207,138,163',green:'94,180,139',purple:'163,135,219'};
-  document.documentElement.style.setProperty('--accent-rgb', colors[preferences.accent] || colors.blue);
+  document.documentElement.style.setProperty('--accent-rgb', '55,232,188');
   const brightness = Math.max(0, Math.min(5, Number(preferences.brightness) || 0));
   document.documentElement.style.setProperty('--card-level', String(brightness * 6));
   document.querySelector('#brightness-value').value = brightness + ' / 5';
