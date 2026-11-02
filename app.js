@@ -1,6 +1,6 @@
 const events = [
-  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ × DRL.', icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
-  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'community', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ × DRL — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
+  { number: '00', date: '2020-05-23', displayDate: '23 maja 2020', category: 'poczatki', era: 'prequel', label: 'Prequel', title: 'Pierwszy dostępny stream na platformie Twitch.', description: 'Najstarszy dostępny zapis transmisji otwiera prequel historii BTKJ × DRL.', highlights: ['🎮 Epizod GTA V RP', '🤞 OG widownia. Nie do zobaczenia na aktualnych transmisjach.'], icon: '◁', theme: 'prequel', detail: 'Ten stream rozpoczyna okres poprzedzający właściwą historię społeczności — sezon Prequel.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' },
+  { number: '01', date: '2021-03-25', displayDate: '25 marca 2021', category: 'poczatki', era: 'community', label: 'Początki', title: 'Wszystko zaczęło się na Twitchu.', description: '25 marca 2021 roku na kanale crisuuubtkj na Twitchu zaczęła się historia naszej społeczności.', highlights: ['🎮 Legendarny stream z Drug Dealer Simulator', '🥳 Stream tak dobry, że zapoczątkował ponad 6 lat historii'], icon: '↗', theme: 'purple', detail: 'To właśnie tutaj zaczyna się historia BTKJ × DRL — OG społeczności minionych lat.', url: 'https://www.twitch.tv/crisuuubtkj', linkLabel: 'Kanał crisuuubtkj na Twitchu' }
 ];
 const list = document.querySelector('#timeline-list');
 function render(filter = 'all') {
@@ -37,9 +37,19 @@ function renderEventsPage() {
   const query = eventsSearch.value.trim().toLocaleLowerCase('pl');
   const visible = events.filter(event => (eventsFilter === 'all' || event.era === eventsFilter) && (!query || Object.values(event).join(' ').toLocaleLowerCase('pl').includes(query)));
   eventsCount.textContent = visible.length + (visible.length === 1 ? ' wydarzenie' : ' wydarzenia');
-  eventsResults.innerHTML = visible.length ? visible.map(event => `<article class="events-card"><time datetime="${event.date}">${event.displayDate}</time><div><span class="events-tag ${event.theme}">${event.label}</span><h2>${event.title}</h2><p>${event.description}</p></div><a href="#historia" aria-label="Zobacz ${event.title}">›</a></article>`).join('') : `<div class="events-empty"><strong>Brak pasujących wydarzeń</strong><span>Zmień wyszukiwanie lub wybierz inny filtr.</span></div>`;
+  eventsResults.innerHTML = visible.length ? visible.map(event => `<article class="events-card"><time datetime="${event.date}">${event.displayDate}</time><div><span class="events-tag ${event.theme}">${event.label}</span><h2>${event.title}</h2><p>${event.description}</p></div><button type="button" class="events-expand" data-event-expand="${event.number}" aria-expanded="false" aria-controls="event-details-${event.number}" aria-label="Rozwiń opis wydarzenia: ${event.title}">›</button><div class="event-card-details" id="event-details-${event.number}" hidden>${event.highlights.map(item => `<p>${item}</p>`).join('')}</div></article>`).join('') : `<div class="events-empty"><strong>Brak pasujących wydarzeń</strong><span>Zmień wyszukiwanie lub wybierz inny filtr.</span></div>`;
 }
 eventsSearch?.addEventListener('input', renderEventsPage);
+eventsResults?.addEventListener('click', event => {
+  const button = event.target.closest('[data-event-expand]');
+  if (!button) return;
+  const details = eventsResults.querySelector(`#event-details-${button.dataset.eventExpand}`);
+  const expanded = button.getAttribute('aria-expanded') !== 'true';
+  button.setAttribute('aria-expanded', String(expanded));
+  button.setAttribute('aria-label', `${expanded ? 'Zwiń' : 'Rozwiń'} opis wydarzenia`);
+  button.closest('.events-card').classList.toggle('expanded', expanded);
+  details.hidden = !expanded;
+});
 document.querySelector('#events-filters')?.addEventListener('click', event => {
   const button = event.target.closest('[data-events-filter]');
   if (!button) return;
