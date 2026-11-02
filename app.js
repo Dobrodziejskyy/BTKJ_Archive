@@ -998,6 +998,7 @@ function refreshPromiseBalances(applyWidths = false) {
     uncompleted.textContent = balance.failed + ' Niewykonane ×';
     total.textContent = balance.total + ' łącznie';
     const track = card.querySelector('.balance-track');
+    card.classList.toggle('is-empty', !balance.resolved);
     track.classList.toggle('is-empty', !balance.resolved);
     track.classList.toggle('is-all-done', balance.resolved > 0 && balance.done === balance.resolved);
     track.classList.toggle('is-all-failed', balance.resolved > 0 && balance.failed === balance.resolved);
