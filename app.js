@@ -359,6 +359,51 @@ document.querySelector('#actor-filters').addEventListener('click', event => {
 });
 renderActors();
 
+const mediaItems = [
+  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', type:'photo'},
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', type:'photo'}
+];
+const mediaGrid = document.querySelector('#media-grid');
+const mediaDialog = document.querySelector('#media-lightbox');
+const mediaDialogImage = document.querySelector('#media-lightbox-image');
+let activeMediaIndex = 0;
+function showMediaItem(index) {
+  activeMediaIndex = (index + mediaItems.length) % mediaItems.length;
+  const item = mediaItems[activeMediaIndex];
+  mediaDialogImage.src = item.src;
+  mediaDialogImage.alt = item.alt;
+  document.querySelector('#media-lightbox-title').textContent = item.title;
+  document.querySelector('#media-lightbox-position').textContent = `${activeMediaIndex + 1} / ${mediaItems.length}`;
+}
+mediaGrid?.addEventListener('click', event => {
+  const card = event.target.closest('[data-media-index]');
+  if (!card) return;
+  showMediaItem(Number(card.dataset.mediaIndex));
+  if (!mediaDialog.open) mediaDialog.showModal();
+});
+mediaDialog?.addEventListener('click', event => {
+  const step = event.target.closest('[data-media-step]');
+  if (step) showMediaItem(activeMediaIndex + Number(step.dataset.mediaStep));
+});
+mediaDialog?.addEventListener('keydown', event => {
+  if (event.key === 'ArrowLeft') showMediaItem(activeMediaIndex - 1);
+  if (event.key === 'ArrowRight') showMediaItem(activeMediaIndex + 1);
+});
+document.querySelector('#media-filters')?.addEventListener('click', event => {
+  const button = event.target.closest('[data-media-filter]');
+  if (!button) return;
+  const filter = button.dataset.mediaFilter;
+  let visible = 0;
+  mediaGrid.querySelectorAll('[data-media-type]').forEach(card => {
+    const matches = filter === 'all' || card.dataset.mediaType === filter;
+    card.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  mediaGrid.hidden = visible === 0;
+  document.querySelector('#media-empty').hidden = visible !== 0;
+  document.querySelector('.media-summary strong').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
+});
+
 const vodSearch = document.querySelector('#vod-search');
 const vodSeasonCards = [...document.querySelectorAll('.vod-season-card')];
 const vodEmpty = document.querySelector('#vod-empty');
