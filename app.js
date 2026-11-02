@@ -360,8 +360,8 @@ document.querySelector('#actor-filters').addEventListener('click', event => {
 renderActors();
 
 const mediaItems = [
-  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', type:'photo'},
-  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', type:'photo'}
+  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'},
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
@@ -373,6 +373,9 @@ function showMediaItem(index) {
   mediaDialogImage.src = item.src;
   mediaDialogImage.alt = item.alt;
   document.querySelector('#media-lightbox-title').textContent = item.title;
+  const mediaDate = document.querySelector('#media-lightbox-date');
+  mediaDate.textContent = item.created;
+  mediaDate.dateTime = item.datetime;
   document.querySelector('#media-lightbox-position').textContent = `${activeMediaIndex + 1} / ${mediaItems.length}`;
 }
 mediaGrid?.addEventListener('click', event => {
