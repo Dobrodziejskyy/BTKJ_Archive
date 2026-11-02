@@ -32,7 +32,7 @@ document.querySelector('#open-settings').addEventListener('click', () => {
 });
 
 const preferenceKey = 'btkj-drl-preferences-v1';
-const defaults = {theme:'dark', oled:true, brightness:3, accent:'blue', tint:false, background:'space', 'compact-timeline':false, 'text-size':'normal', 'sticky-nav':false, 'smooth-scroll':true, 'hide-decorations':false, 'reduce-motion':false};
+const defaults = {theme:'dark', oled:true, brightness:3, accent:'blue', tint:false, 'compact-timeline':false, 'text-size':'normal', 'sticky-nav':false, 'smooth-scroll':true, 'hide-decorations':false, 'reduce-motion':false};
 let preferences = {...defaults};
 try {
   const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
@@ -40,7 +40,6 @@ try {
     if (typeof saved?.[key] === typeof value) preferences[key] = saved[key];
   }
 } catch {}
-preferences.background = 'space';
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function navigationBehavior() {
@@ -51,7 +50,6 @@ function applyPreferences() {
   document.body.classList.toggle('light-theme', !dark);
   document.body.classList.toggle('oled-mode', dark && preferences.oled);
   document.body.classList.toggle('tinted', preferences.tint);
-  document.body.classList.remove('no-stars');
   for (const key of ['compact-timeline','hide-decorations','sticky-nav','reduce-motion']) document.body.classList.toggle(key, preferences[key]);
   document.body.classList.toggle('large-text', preferences['text-size'] === 'large');
   document.documentElement.style.scrollBehavior = navigationBehavior() === 'smooth' ? 'smooth' : 'auto';
@@ -67,9 +65,76 @@ function applyPreferences() {
   try {localStorage.setItem(preferenceKey, JSON.stringify(preferences));} catch {}
 }
 const backgroundControl = document.querySelector('#background');
-backgroundControl.querySelector('option[value="none"]')?.remove();
-backgroundControl.disabled = true;
-backgroundControl.closest('.preference').querySelector('p').textContent = 'Pole gwiazd jest zawsze włączone.';
+backgroundControl.closest('.preference').remove();
+
+const starCanvas = document.createElement('canvas');
+starCanvas.className = 'starfield-canvas';
+starCanvas.setAttribute('aria-hidden', 'true');
+document.body.prepend(starCanvas);
+const starContext = starCanvas.getContext('2d');
+const stars = Array.from({length: 180}, () => ({}));
+let starWidth = 0;
+let starHeight = 0;
+let starBoost = 1;
+let lastStarFrame = performance.now();
+function resetStar(star, randomDepth = true) {
+  star.x = (Math.random() - .5) * 2.2;
+  star.y = (Math.random() - .5) * 2.2;
+  star.z = randomDepth ? Math.random() * .95 + .05 : 1;
+  star.brightness = Math.random() * .65 + .35;
+}
+function resizeStarfield() {
+  const ratio = Math.min(devicePixelRatio || 1, 2);
+  starWidth = innerWidth;
+  starHeight = innerHeight;
+  starCanvas.width = Math.round(starWidth * ratio);
+  starCanvas.height = Math.round(starHeight * ratio);
+  starCanvas.style.width = starWidth + 'px';
+  starCanvas.style.height = starHeight + 'px';
+  starContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+function boostStarfield() {
+  if (!reducedMotion.matches) starBoost = 5.5;
+}
+function drawStarfield(now) {
+  const elapsed = Math.min(34, now - lastStarFrame);
+  lastStarFrame = now;
+  starContext.clearRect(0, 0, starWidth, starHeight);
+  const centerX = starWidth / 2;
+  const centerY = starHeight / 2;
+  const depthStep = reducedMotion.matches ? 0 : .00022 * elapsed * starBoost;
+  starBoost += (1 - starBoost) * Math.min(1, elapsed / 420);
+  for (const star of stars) {
+    const previousZ = star.z;
+    star.z -= depthStep;
+    if (star.z <= .018) resetStar(star, false);
+    const scale = Math.min(starWidth, starHeight) * .54;
+    const x = centerX + star.x / star.z * scale;
+    const y = centerY + star.y / star.z * scale;
+    const previousX = centerX + star.x / previousZ * scale;
+    const previousY = centerY + star.y / previousZ * scale;
+    if (x < -60 || x > starWidth + 60 || y < -60 || y > starHeight + 60) {
+      resetStar(star, false);
+      continue;
+    }
+    const size = Math.min(2.8, .35 + (1 - star.z) * 2.2);
+    starContext.beginPath();
+    starContext.moveTo(previousX, previousY);
+    starContext.lineTo(x, y);
+    starContext.strokeStyle = `rgba(200,215,255,${star.brightness * .55})`;
+    starContext.lineWidth = size;
+    starContext.stroke();
+    starContext.beginPath();
+    starContext.arc(x, y, size * .62, 0, Math.PI * 2);
+    starContext.fillStyle = `rgba(235,240,255,${star.brightness})`;
+    starContext.fill();
+  }
+  requestAnimationFrame(drawStarfield);
+}
+stars.forEach(star => resetStar(star));
+resizeStarfield();
+addEventListener('resize', resizeStarfield);
+requestAnimationFrame(drawStarfield);
 document.querySelectorAll('[data-preference]').forEach(control => {
   control.addEventListener(control.type === 'range' ? 'input' : 'change', () => {
     preferences[control.id] = control.type === 'checkbox' ? control.checked : control.type === 'range' ? Number(control.value) : control.value;
@@ -174,10 +239,13 @@ function renderActors() {
 }
 document.querySelector('#actor-search').addEventListener('input', renderActors);
 renderActors();
+let currentPageKey;
 function updatePageView(hash = location.hash) {
   const pages = {obietnice:'Obietnice',vody:'VODy',media:'Media',klipy:'Klipy',aktorzy:'Aktorzy',wazne:'Ważne wydarzenia',info:'Informacje i kontakt'};
   const requested = hash.replace('#', '');
   const activePage = pages[requested] ? requested : 'home';
+  if (currentPageKey && currentPageKey !== activePage) boostStarfield();
+  currentPageKey = activePage;
   document.querySelectorAll('[data-page-view]').forEach(view => {
     const current = view.dataset.pageView === activePage;
     view.hidden = !current;
