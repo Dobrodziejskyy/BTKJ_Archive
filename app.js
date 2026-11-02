@@ -76,7 +76,17 @@ try {
     if (typeof saved?.[key] === typeof value) preferences[key] = saved[key];
   }
 } catch {}
-if (!['dark','light','btkj'].includes(preferences.theme)) preferences.theme = 'dark';
+const btkjUnlockKey = 'btkj-theme-unlocked-v1';
+let btkjThemeUnlocked = false;
+try { btkjThemeUnlocked = localStorage.getItem(btkjUnlockKey) === 'true'; } catch {}
+const themeControl = document.querySelector('#theme');
+function revealBtkjThemeOption() {
+  if (!themeControl.querySelector('option[value="btkj"]')) themeControl.add(new Option('BTKJ', 'btkj'));
+  const description = themeControl.closest('.preference').querySelector('p');
+  description.textContent = 'Wybierz ciemny, jasny lub odblokowany motyw BTKJ.';
+}
+if (btkjThemeUnlocked) revealBtkjThemeOption();
+if (!['dark','light'].includes(preferences.theme) && !(btkjThemeUnlocked && preferences.theme === 'btkj')) preferences.theme = 'dark';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function navigationBehavior() {
   return preferences['smooth-scroll'] && !preferences['reduce-motion'] && !reducedMotion.matches ? 'smooth' : 'instant';
@@ -100,6 +110,24 @@ function applyPreferences() {
   }
   try {localStorage.setItem(preferenceKey, JSON.stringify(preferences));} catch {}
 }
+let btkjKeyboardSequence = '';
+document.addEventListener('keydown', event => {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.key.length !== 1) return;
+  btkjKeyboardSequence = (btkjKeyboardSequence + event.key.toUpperCase()).slice(-4);
+  if (btkjKeyboardSequence !== 'BTKJ' || btkjThemeUnlocked) return;
+  btkjThemeUnlocked = true;
+  try { localStorage.setItem(btkjUnlockKey, 'true'); } catch {}
+  revealBtkjThemeOption();
+  preferences.theme = 'btkj';
+  applyPreferences();
+  const toast = document.createElement('div');
+  toast.className = 'theme-unlock-toast';
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = '<b>BTKJ</b><span>Odblokowano ukryty motyw</span>';
+  document.body.append(toast);
+  requestAnimationFrame(() => toast.classList.add('visible'));
+  setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 250); }, 2600);
+});
 const backgroundControl = document.querySelector('#background');
 backgroundControl.closest('.preference').remove();
 
