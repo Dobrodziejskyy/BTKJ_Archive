@@ -242,8 +242,9 @@ renderActors();
 
 const promiseEntries = [{
   id: 'testowe', date: 'testowe', time: 'testowe', title: 'testowe', status: 'testowe',
-  priority: 'testowe', source: 'testowe', details: 'testowe', archived: false
+  priority: 'testowe', source: 'testowe', details: 'testowe', resolvedAt: '', archived: false
 }];
+let promiseBalances = null;
 const promiseStateKey = 'btkj-drl-promise-panel-v1';
 let promiseState = {query:'', compact:false, remember:false, archive:false, grid:false, sort:'desc', status:'all', calendar:'', stats:false};
 try {
@@ -301,6 +302,7 @@ function renderPromisePanel() {
   promisesView.querySelector('[data-promise-action="archive"]').setAttribute('aria-pressed', String(promiseState.archive));
   promisesView.querySelector('.promise-statistics').hidden = !promiseState.stats;
   promisesView.querySelectorAll('[data-promise-action="stats"]').forEach(button => button.setAttribute('aria-expanded', String(promiseState.stats)));
+  if (promiseBalances) refreshPromiseBalances(true);
   savePromiseState();
 }
 promisesView.addEventListener('input', event => {
@@ -399,34 +401,51 @@ document.querySelectorAll('dialog').forEach(dialog => {
   });
 });
 
-// Add confirmed records with status "done" or "failed" and resolvedAt YYYY-MM-DD.
-const promises = [];
+// Every promise card and both home-page balances use this same promiseEntries array.
 function calculatePromiseBalance(records, now = new Date()) {
   const end = now.toISOString().slice(0, 10);
   const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 6, 1));
   month.setUTCDate(Math.min(now.getUTCDate(), new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0)).getUTCDate()));
   const start = month.toISOString().slice(0, 10);
   const summarize = rows => {
-    const done = rows.filter(row => row.status === 'done').length;
-    const failed = rows.filter(row => row.status === 'failed').length;
-    const total = done + failed;
-    return {done, failed, total, percent: total ? Math.round(done / total * 100) : null};
+    const done = rows.filter(row => ['done','wykonane'].includes(row.status)).length;
+    const failed = rows.filter(row => ['failed','niewykonane'].includes(row.status)).length;
+    const resolved = done + failed;
+    const total = rows.length;
+    return {done, failed, resolved, total, percent: resolved ? Math.round(done / resolved * 100) : null};
   };
-  return {all: summarize(records), recent: summarize(records.filter(row => row.resolvedAt >= start && row.resolvedAt <= end))};
+  return {all: summarize(records), recent: summarize(records.filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row.resolvedAt) && row.resolvedAt >= start && row.resolvedAt <= end))};
 }
-const promiseBalances = calculatePromiseBalance(promises);
-document.querySelectorAll('[data-balance]').forEach(card => {
-  const balance = promiseBalances[card.dataset.balance];
-  card.querySelector('.balance-percent').dataset.countTo = balance.percent ?? '';
-  card.querySelector('.balance-completed').dataset.countTo = balance.done;
-  card.querySelector('.balance-uncompleted').dataset.countTo = balance.failed;
-  card.querySelector('.balance-total').dataset.countTo = balance.total;
-  const track = card.querySelector('.balance-track');
-  track.classList.toggle('is-empty', !balance.total);
-  track.setAttribute('aria-label', balance.total ? `${balance.done} wykonane, ${balance.failed} niewykonane; ${balance.percent}% wykonanych` : 'Brak rozliczonych obietnic');
-  card.querySelector('.balance-done').dataset.width = balance.total ? balance.done / balance.total * 100 : 0;
-  card.querySelector('.balance-failed').dataset.width = balance.total ? balance.failed / balance.total * 100 : 0;
-});
+function refreshPromiseBalances(applyWidths = false) {
+  promiseBalances = calculatePromiseBalance(promiseEntries);
+  document.querySelectorAll('[data-balance]').forEach(card => {
+    const balance = promiseBalances[card.dataset.balance];
+    const percent = card.querySelector('.balance-percent');
+    const completed = card.querySelector('.balance-completed');
+    const uncompleted = card.querySelector('.balance-uncompleted');
+    const total = card.querySelector('.balance-total');
+    percent.dataset.countTo = balance.percent ?? '';
+    completed.dataset.countTo = balance.done;
+    uncompleted.dataset.countTo = balance.failed;
+    total.dataset.countTo = balance.total;
+    percent.textContent = balance.percent === null ? '—' : balance.percent + '%';
+    completed.textContent = '✓ ' + balance.done + ' Wykonane';
+    uncompleted.textContent = balance.failed + ' Niewykonane ×';
+    total.textContent = balance.total + ' łącznie';
+    const track = card.querySelector('.balance-track');
+    track.classList.toggle('is-empty', !balance.resolved);
+    track.setAttribute('aria-label', `${balance.total} łącznie, ${balance.done} wykonane, ${balance.failed} niewykonane${balance.percent === null ? '' : `; ${balance.percent}% wykonanych`}`);
+    const doneWidth = balance.resolved ? balance.done / balance.resolved * 100 : 0;
+    const failedWidth = balance.resolved ? balance.failed / balance.resolved * 100 : 0;
+    card.querySelector('.balance-done').dataset.width = doneWidth;
+    card.querySelector('.balance-failed').dataset.width = failedWidth;
+    if (applyWidths) {
+      card.querySelector('.balance-done').style.width = doneWidth + '%';
+      card.querySelector('.balance-failed').style.width = failedWidth + '%';
+    }
+  });
+}
+refreshPromiseBalances();
 
 function motionAllowed() {
   return !preferences['reduce-motion'] && !reducedMotion.matches;
