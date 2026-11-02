@@ -361,7 +361,8 @@ renderActors();
 
 const mediaItems = [
   {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'},
-  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'}
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', type:'photo'},
+  {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', type:'photo'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
@@ -416,19 +417,25 @@ document.querySelector('#media-filters')?.addEventListener('click', event => {
 function renderMediaCatalog() {
   const query = document.querySelector('#media-search').value.trim().toLocaleLowerCase('pl');
   let visible = 0;
+  const visibleItems = [];
   mediaGrid.querySelectorAll('[data-media-type]').forEach(card => {
     const item = mediaItems[Number(card.dataset.mediaIndex)];
     const matchesType = mediaFilter === 'all' || card.dataset.mediaType === mediaFilter;
     const matchesQuery = !query || [item.title,item.created,item.alt,'Forza Horizon 4','BTKJ Gang','BMW'].join(' ').toLocaleLowerCase('pl').includes(query);
     const matches = matchesType && matchesQuery;
     card.hidden = !matches;
-    if (matches) visible += 1;
+    if (matches) {
+      visible += 1;
+      visibleItems.push(item);
+    }
   });
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
   const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
   document.querySelector('#media-group-title').textContent = labels[mediaFilter];
   document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
+  const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)))].sort();
+  document.querySelector('#media-date-summary').textContent = !visibleItems.length ? 'brak materiałów' : visibleItems.length === 1 ? visibleItems[0].created : visibleYears.length === 1 ? visibleYears[0] : `${visibleYears[0]}–${visibleYears.at(-1)}`;
 }
 document.querySelector('#media-search')?.addEventListener('input', renderMediaCatalog);
 renderMediaCatalog();
