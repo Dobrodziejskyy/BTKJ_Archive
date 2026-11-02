@@ -106,6 +106,5 @@ body.btkj-theme{background:radial-gradient(circle at 18% 8%,#07372d 0,transparen
 /* Zielono-cyjanowe panele treści motywu BTKJ. */
 .btkj-theme .promise-control-panel,.btkj-theme .promise-results,.btkj-theme .actor-legend{background:linear-gradient(135deg,#071c17,#061719 68%,#072229);border-color:#1d695a;box-shadow:inset 0 1px #48e6c018}.btkj-theme .promise-entry{background:linear-gradient(120deg,#0a231e,#071a18 62%,#082025);border-color:#246f60;box-shadow:inset 0 1px #52e9c014}.btkj-theme .promise-entry:hover{border-color:#319b83}.btkj-theme .promise-entry h2,.btkj-theme .promise-entry-top strong,.btkj-theme .promise-list-meta>strong,.btkj-theme .actor-legend dt{color:#dcfff6}.btkj-theme .promise-entry-top,.btkj-theme .promise-entry-bottom,.btkj-theme .promise-list-meta,.btkj-theme .actor-legend dd{color:#9bc8be}.btkj-theme .actor-legend h2{color:#65d7bd}.btkj-theme .promise-statistics>div{background:#082019;border-color:#205c50}.btkj-theme .promise-calendar,.btkj-theme .promise-view-actions{background:#061713;border-color:#1b5549}
 
-/* Każdy aktor zajmuje osobny wiersz i rozwija własny kafelek. */
-.actors-list{grid-template-columns:minmax(0,1fr)}.supporting-actor{grid-column:1}.supporting-actor summary{min-height:108px}.supporting-actor .actor-detail{padding-left:72px}
-@media(max-width:650px){.supporting-actor .actor-detail{padding:0 15px 18px}}
+/* Aktor pierwszoplanowy jest szeroki, pozostali tworzą dwie kolumny. */
+.supporting-actor:has(>details[open]){grid-column:1/-1}
