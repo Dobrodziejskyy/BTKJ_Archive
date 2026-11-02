@@ -241,8 +241,8 @@ document.querySelector('#actor-search').addEventListener('input', renderActors);
 renderActors();
 
 const promiseEntries = [{
-  id: 'testowe', date: 'testowe', time: 'testowe', title: 'testowe', status: 'testowe',
-  priority: 'testowe', source: 'testowe', details: 'testowe', resolvedAt: '', archived: false
+  id: 'testowe', date: '12 Kwietnia 2021r', time: '', title: 'testowe', status: 'done',
+  priority: 3, source: 'brak źródła', details: 'obietnica na stream', resolvedAt: '2021-04-12', archived: false
 }];
 let promiseBalances = null;
 const promiseStateKey = 'btkj-drl-promise-panel-v1';
@@ -251,6 +251,7 @@ try {
   const saved = JSON.parse(localStorage.getItem(promiseStateKey) || '{}');
   if (saved.remember) promiseState = {...promiseState, ...saved, remember:true};
 } catch {}
+if (!['all','done','failed'].includes(promiseState.status)) promiseState.status = 'all';
 const promisesView = document.querySelector('#obietnice');
 promisesView.innerHTML = `<div class="archive-page-heading"><h1 id="obietnice-title"><span aria-hidden="true">▣</span>Obietnice</h1><small>Aktualizowana na bieżąco lista obietnic BTKJ × DRL <span aria-hidden="true">›</span></small></div>
   <section class="panel promise-control-panel" aria-label="Narzędzia obietnic">
@@ -291,7 +292,8 @@ function renderPromisePanel() {
   const results = promisesView.querySelector('[data-promise-results]');
   promisesView.classList.toggle('promise-compact', promiseState.compact);
   results.classList.toggle('promise-grid', promiseState.grid);
-  results.innerHTML = rows.length ? rows.map(entry => `<article class="promise-entry" data-promise-id="${entry.id}"><div class="promise-entry-top"><span><strong>${entry.date}</strong> ${entry.time} <small>▧ · ${entry.details}</small></span><b>${entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="promise-entry-bottom"><span>Priorytet: <strong>${entry.priority}</strong></span><span>${entry.source}</span><div><button type="button" aria-label="Historia obietnicy" title="Historia">↻</button><button type="button" aria-label="Kopiuj link" title="Kopiuj link" data-copy-promise>↗</button></div></div></article>`).join('') : `<div class="promise-empty"><strong>Brak pasujących obietnic</strong><span>Zmień wyszukiwanie lub wyczyść filtry.</span></div>`;
+  const statusLabels = {done:'WYKONANE',failed:'NIEWYKONANE',testowe:'TESTOWE'};
+  results.innerHTML = rows.length ? rows.map(entry => `<article class="promise-entry" data-promise-id="${entry.id}"><div class="promise-entry-top"><span><strong>${entry.date}</strong>${entry.time ? ` ${entry.time}` : ''}<small><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="14" height="14" rx="3"/><path d="m17 10 4-2v8l-4-2z"/></svg>${entry.details}</small></span><b class="status-${entry.status}">${statusLabels[entry.status] || entry.status}<i></i></b></div><h2>${entry.title}</h2><div class="promise-entry-bottom"><span class="promise-priority">Priorytet: <strong aria-label="${entry.priority} na 5">${Array.from({length:5}, (_, index) => `<i${index < entry.priority ? ' class="active"' : ''}></i>`).join('')}</strong></span><span>${entry.source}</span><div><button type="button" aria-label="Historia obietnicy" title="Historia">↻</button><button type="button" aria-label="Kopiuj link" title="Kopiuj link" data-copy-promise>↗</button></div></div></article>`).join('') : `<div class="promise-empty"><strong>Brak pasujących obietnic</strong><span>Zmień wyszukiwanie lub wyczyść filtry.</span></div>`;
   promisesView.querySelector('[data-promise-count]').textContent = rows.length + (rows.length === 1 ? ' wpis' : ' wpisów');
   promisesView.querySelector('[data-promise-status]').textContent = promiseState.archive ? 'archiwum' : promiseState.status === 'all' ? 'wszystkie' : promiseState.status;
   promisesView.querySelector('[data-stat="visible"]').textContent = rows.length;
@@ -330,7 +332,7 @@ promisesView.addEventListener('click', async event => {
   if (action === 'grid') promiseState.grid = !promiseState.grid;
   if (action === 'stats') promiseState.stats = !promiseState.stats;
   if (action === 'sort') promiseState.sort = promiseState.sort === 'desc' ? 'asc' : 'desc';
-  if (action === 'filter') promiseState.status = promiseState.status === 'all' ? 'testowe' : 'all';
+  if (action === 'filter') promiseState.status = promiseState.status === 'all' ? 'done' : promiseState.status === 'done' ? 'failed' : 'all';
   if (action === 'reset') promiseState = {...promiseState, query:'', archive:false, grid:false, sort:'desc', status:'all', calendar:'', stats:false};
   if (action === 'random') {
     const rows = visiblePromiseEntries();
