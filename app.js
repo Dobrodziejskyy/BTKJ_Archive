@@ -240,6 +240,20 @@ function renderActors() {
 document.querySelector('#actor-search').addEventListener('input', renderActors);
 renderActors();
 
+const vodSearch = document.querySelector('#vod-search');
+const vodSeasonCards = [...document.querySelectorAll('.vod-season-card')];
+const vodEmpty = document.querySelector('#vod-empty');
+vodSearch?.addEventListener('input', () => {
+  const query = vodSearch.value.trim().toLocaleLowerCase('pl');
+  let visible = 0;
+  vodSeasonCards.forEach(card => {
+    const matches = !query || card.dataset.vodSearch.toLocaleLowerCase('pl').includes(query);
+    card.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  vodEmpty.hidden = visible > 0;
+});
+
 const promiseEntries = [{
   id: 'outlast-1k', date: '12 Kwietnia 2021r', promiseDate: '2021-04-12', time: '', title: 'Outlast na 1k obserwujących Twitch', status: 'done',
   priority: 3, source: 'brak źródła', details: 'obietnica na stream', platform: 'stream', pinned: false, modifiedRecently: false, resolvedAt: '2021-04-12', archived: false
