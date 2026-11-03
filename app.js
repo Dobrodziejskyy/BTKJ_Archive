@@ -516,6 +516,13 @@ const clipsVisibleCount = document.querySelector('#clips-visible-count');
 const clipPlayerDialog = document.querySelector('#clip-player-dialog');
 const clipPlayerFrame = document.querySelector('#clip-player-frame');
 const normalizeClipSearch = value => String(value).toLocaleLowerCase('pl').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[.+/_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+function getClipEmbedUrl(clipId, autoplay) {
+  const embedUrl = new URL('https://clips.twitch.tv/embed');
+  embedUrl.searchParams.set('clip', clipId);
+  embedUrl.searchParams.set('parent', location.hostname || 'localhost');
+  embedUrl.searchParams.set('autoplay', String(autoplay));
+  return embedUrl;
+}
 function renderClips() {
   const queryTokens = normalizeClipSearch(clipsSearch?.value).split(' ').filter(Boolean);
   let visible = 0;
@@ -530,14 +537,14 @@ function renderClips() {
   if (clipsVisibleCount) clipsVisibleCount.textContent = `${visible} ${visible === 1 ? 'klip' : visible >= 2 && visible <= 4 ? 'klipy' : 'klipów'}`;
 }
 clipsSearch?.addEventListener('input', renderClips);
+clipsList?.querySelectorAll('[data-clip-id]').forEach(card => {
+  const preview = card.querySelector('[data-clip-preview]');
+  if (preview) preview.src = getClipEmbedUrl(card.dataset.clipId, false);
+});
 clipsList?.addEventListener('click', event => {
   const card = event.target.closest('[data-clip-id]');
   if (!card || !clipPlayerDialog || !clipPlayerFrame) return;
-  const embedUrl = new URL('https://clips.twitch.tv/embed');
-  embedUrl.searchParams.set('clip', card.dataset.clipId);
-  embedUrl.searchParams.set('parent', location.hostname || 'localhost');
-  embedUrl.searchParams.set('autoplay', 'true');
-  clipPlayerFrame.src = embedUrl;
+  clipPlayerFrame.src = getClipEmbedUrl(card.dataset.clipId, true);
   if (!clipPlayerDialog.open) clipPlayerDialog.showModal();
 });
 clipPlayerDialog?.addEventListener('close', () => clipPlayerFrame.removeAttribute('src'));
