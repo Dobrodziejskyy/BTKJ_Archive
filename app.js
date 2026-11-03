@@ -284,7 +284,7 @@ document.addEventListener('click', async event => {
   const link = event.target.closest('a[href^="#"]');
   if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   const hash = link.getAttribute('href');
-  const target = hash === '#' ? document.documentElement : hash === '#aktorzy' ? document.querySelector('#actors-view') : hash.startsWith('#aktorzy/') ? document.querySelector('#actor-detail-view') : document.getElementById(hash.slice(1));
+  const target = hash === '#' ? document.documentElement : hash === '#aktorzy' ? document.querySelector('#actors-view') : hash.startsWith('#aktorzy/') ? document.querySelector('#actor-detail-view') : hash.startsWith('#vody/') ? document.querySelector('#vod-season-view') : document.getElementById(hash.slice(1));
   if (!target) return;
   event.preventDefault();
   if (link.dataset.promiseStatusLink) {
@@ -294,7 +294,7 @@ document.addEventListener('click', async event => {
   const returningToActors = location.hash.startsWith('#aktorzy/') && hash === '#aktorzy';
   await updatePageView(hash);
   const headerHeight = preferences['sticky-nav'] ? document.querySelector('.archive-topbar').offsetHeight : 0;
-  const isPage = hash.startsWith('#aktorzy/') || ['#wydarzenia','#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
+  const isPage = hash.startsWith('#aktorzy/') || hash.startsWith('#vody/') || ['#wydarzenia','#obietnice','#vody','#media','#klipy','#aktorzy','#wazne','#info'].includes(hash);
   const top = returningToActors ? actorListScrollY : hash === '#' || isPage ? 0 : target.getBoundingClientRect().top + window.scrollY - headerHeight - 24;
   window.scrollTo({top: Math.max(0, top), behavior: navigationBehavior()});
   if (location.hash !== hash) {
@@ -495,19 +495,201 @@ function renderMediaCatalog() {
 document.querySelector('#media-search')?.addEventListener('input', renderMediaCatalog);
 renderMediaCatalog();
 
+// Uzupełniając stream, dodaj: title, startedAt, durationMinutes, category
+// ('music' lub 'games') oraz archiveStatus ('available' lub 'lost').
+// Wszystkie wartości w panelu sezonu są liczone z tych rekordów.
+const vodSeasons = [{
+  slug: 'prequel', number: 1, title: 'Prequel', platform: 'Twitch',
+  description: 'Pierwszy sezon archiwum', startDate: '2020-05-23', endDate: '2020-10-15',
+  knownStreamCount: 8, streams: []
+}];
 const vodSearch = document.querySelector('#vod-search');
-const vodSeasonCards = [...document.querySelectorAll('.vod-season-card')];
+const vodSeasonList = document.querySelector('#vod-season-list');
+const vodSeasonCount = document.querySelector('#vod-season-count');
 const vodEmpty = document.querySelector('#vod-empty');
-vodSearch?.addEventListener('input', () => {
-  const query = vodSearch.value.trim().toLocaleLowerCase('pl');
-  let visible = 0;
-  vodSeasonCards.forEach(card => {
-    const matches = !query || card.dataset.vodSearch.toLocaleLowerCase('pl').includes(query);
-    card.hidden = !matches;
-    if (matches) visible += 1;
+const vodSeasonView = document.querySelector('#vod-season-view');
+const vodEscape = value => String(value ?? '').replace(/[&<>"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[character]));
+const vodDateKey = stream => String(stream?.startedAt || stream?.date || '').slice(0, 10);
+function parseVodDay(value) {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const date = new Date(timestamp);
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day ? timestamp : null;
+}
+function vodStreamNoun(count) {
+  const value = Number(count) || 0;
+  return value === 1 ? 'stream' : value % 10 >= 2 && value % 10 <= 4 && (value % 100 < 12 || value % 100 > 14) ? 'streamy' : 'streamów';
+}
+function vodStreamCountLabel(count) {
+  const value = Number(count) || 0;
+  return `${value} ${vodStreamNoun(value)}`;
+}
+function vodSeasonCountLabel(count) {
+  const value = Number(count) || 0;
+  return `${value} ${value === 1 ? 'sezon' : value % 10 >= 2 && value % 10 <= 4 && (value % 100 < 12 || value % 100 > 14) ? 'sezony' : 'sezonów'}`;
+}
+function formatVodDate(value, capitalize = false) {
+  const timestamp = parseVodDay(value);
+  if (timestamp === null) return 'Brak daty';
+  const label = new Intl.DateTimeFormat('pl-PL', {day:'numeric', month:'long', year:'numeric', timeZone:'UTC'}).format(timestamp);
+  return capitalize ? label.replace(/^(\d+\s+)(\p{L})/u, (_, prefix, letter) => prefix + letter.toLocaleUpperCase('pl')) : label;
+}
+function formatVodDuration(value) {
+  if (!Number.isFinite(value) || value <= 0) return '—';
+  const minutes = Math.round(value);
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return hours ? `${hours}h${remainder ? `${remainder}min` : ''}` : `${remainder}min`;
+}
+function formatVodDays(value, prefix = '') {
+  if (!Number.isFinite(value)) return '—';
+  const rounded = Math.round(value * 10) / 10;
+  const number = Number.isInteger(rounded) ? String(rounded) : rounded.toLocaleString('pl-PL', {maximumFractionDigits:1});
+  const suffix = rounded === 1 ? 'dzień' : 'dni';
+  return `${prefix}${number} ${suffix}`;
+}
+function circularVodMean(values) {
+  if (!values.length) return null;
+  const angle = values.reduce((sum, value) => sum + Math.sin(value / 1440 * Math.PI * 2), 0);
+  const radius = values.reduce((sum, value) => sum + Math.cos(value / 1440 * Math.PI * 2), 0);
+  const mean = Math.atan2(angle / values.length, radius / values.length);
+  return Math.round(((mean < 0 ? mean + Math.PI * 2 : mean) / (Math.PI * 2)) * 1440) % 1440;
+}
+function formatVodClock(minutes) {
+  if (!Number.isFinite(minutes)) return '—';
+  const normalized = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`;
+}
+function vodArchiveStatus(stream) {
+  if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
+  if (stream?.available === true) return 'available';
+  if (stream?.available === false) return 'lost';
+  return 'unknown';
+}
+function calculateVodStats(season) {
+  const streams = Array.isArray(season?.streams) ? season.streams : [];
+  const total = Math.max(Number(season?.knownStreamCount) || 0, streams.length);
+  const music = streams.filter(stream => ['music','muzyka'].includes(stream.category)).length;
+  const games = streams.filter(stream => ['games','gierki'].includes(stream.category)).length;
+  const durationStreams = streams.filter(stream => Number.isFinite(stream.durationMinutes) && stream.durationMinutes > 0);
+  const totalDuration = durationStreams.reduce((sum, stream) => sum + stream.durationMinutes, 0);
+  const averageDuration = durationStreams.length ? totalDuration / durationStreams.length : null;
+  const byDuration = [...durationStreams].sort((a, b) => a.durationMinutes - b.durationMinutes);
+  const shortest = byDuration[0] || null;
+  const longest = byDuration.at(-1) || null;
+  const dated = streams.map(stream => ({stream, key:vodDateKey(stream), timestamp:parseVodDay(vodDateKey(stream))})).filter(item => item.timestamp !== null).sort((a, b) => a.timestamp - b.timestamp);
+  const uniqueDays = [...new Set(dated.map(item => item.timestamp))].sort((a, b) => a - b);
+  const averageFrequency = dated.length > 1 ? (dated.at(-1).timestamp - dated[0].timestamp) / 86400000 / (dated.length - 1) : null;
+  let longestBreak = null;
+  for (let index = 1; index < uniqueDays.length; index += 1) {
+    const days = (uniqueDays[index] - uniqueDays[index - 1]) / 86400000;
+    if (!longestBreak || days > longestBreak.days) longestBreak = {days, from:uniqueDays[index - 1], to:uniqueDays[index]};
+  }
+  let longestDaily = uniqueDays.length ? 1 : null;
+  let currentDaily = uniqueDays.length ? 1 : 0;
+  for (let index = 1; index < uniqueDays.length; index += 1) {
+    currentDaily = uniqueDays[index] - uniqueDays[index - 1] === 86400000 ? currentDaily + 1 : 1;
+    longestDaily = Math.max(longestDaily, currentDaily);
+  }
+  const starts = streams.map(stream => {
+    const match = String(stream.startedAt || '').match(/T(\d{2}):(\d{2})/);
+    return match ? {stream, minutes:Number(match[1]) * 60 + Number(match[2])} : null;
+  }).filter(Boolean);
+  const typicalStart = circularVodMean(starts.map(item => item.minutes));
+  const typicalEnd = circularVodMean(starts.filter(item => Number.isFinite(item.stream.durationMinutes) && item.stream.durationMinutes > 0).map(item => item.minutes + item.stream.durationMinutes));
+  const monthsByKey = new Map();
+  dated.forEach(({stream, key}) => {
+    const monthKey = key.slice(0, 7);
+    const month = monthsByKey.get(monthKey) || {key:monthKey, count:0, duration:0};
+    month.count += 1;
+    if (Number.isFinite(stream.durationMinutes) && stream.durationMinutes > 0) month.duration += stream.durationMinutes;
+    monthsByKey.set(monthKey, month);
   });
-  vodEmpty.hidden = visible > 0;
+  const months = [...monthsByKey.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const available = streams.filter(stream => vodArchiveStatus(stream) === 'available');
+  const lost = streams.filter(stream => vodArchiveStatus(stream) === 'lost');
+  const unknownArchive = Math.max(0, total - available.length - lost.length);
+  const detailed = streams.filter(stream => parseVodDay(vodDateKey(stream)) !== null && /T\d{2}:\d{2}/.test(String(stream.startedAt || '')) && Number.isFinite(stream.durationMinutes) && stream.durationMinutes > 0 && ['music','muzyka','games','gierki'].includes(stream.category) && vodArchiveStatus(stream) !== 'unknown').length;
+  return {streams, total, music, games, durationStreams, totalDuration, averageDuration, shortest, longest, dated, averageFrequency, longestBreak, longestDaily, typicalStart, typicalEnd, months, available, lost, unknownArchive, detailed};
+}
+function vodSeasonRange(season) {
+  const dates = [season.startDate, season.endDate, ...(season.streams || []).map(vodDateKey)].filter(value => parseVodDay(value) !== null).sort();
+  return {start:dates[0] || '', end:dates.at(-1) || dates[0] || ''};
+}
+function renderVodSeasons() {
+  if (!vodSeasonList) return;
+  const query = (vodSearch?.value || '').trim().toLocaleLowerCase('pl');
+  const visible = vodSeasons.filter(season => {
+    const stats = calculateVodStats(season);
+    const range = vodSeasonRange(season);
+    const searchText = [season.title, season.platform, season.description, vodStreamCountLabel(stats.total), formatVodDate(range.start), formatVodDate(range.end), ...(season.streams || []).flatMap(stream => [stream.title, stream.category, vodDateKey(stream)])].join(' ').toLocaleLowerCase('pl');
+    return !query || searchText.includes(query);
+  });
+  vodSeasonList.innerHTML = visible.map(season => {
+    const stats = calculateVodStats(season);
+    const range = vodSeasonRange(season);
+    return `<a class="vod-season-card" href="#vody/${encodeURIComponent(season.slug)}" aria-label="Otwórz sezon ${vodEscape(season.title)}"><div class="vod-season-thumbnail" role="img" aria-label="Tymczasowa miniatura sezonu ${vodEscape(season.title)}"><span>${vodEscape(season.title)}</span></div><div class="vod-season-content"><div class="vod-season-title"><div><small>SEZON ${season.number}</small><h3>${vodEscape(season.title)}</h3></div><span aria-hidden="true">›</span></div><p class="vod-season-date"><time datetime="${range.start}">${formatVodDate(range.start, true)}</time><span>—</span><time datetime="${range.end}">${formatVodDate(range.end, true)}</time></p><div class="vod-season-meta"><strong>${vodStreamCountLabel(stats.total)}</strong><span>${vodEscape(season.description)}</span></div></div></a>`;
+  }).join('');
+  if (vodSeasonCount) vodSeasonCount.textContent = vodSeasonCountLabel(visible.length);
+  if (vodEmpty) vodEmpty.hidden = visible.length > 0;
+}
+function vodStreamSummary(stream) {
+  if (!stream) return 'Brak danych';
+  const title = stream.title ? vodEscape(stream.title) : 'Stream';
+  const date = vodDateKey(stream);
+  return date ? `${title} · ${formatVodDate(date)}` : title;
+}
+const vodStatIcons = {
+  chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 18 5-5 4 3 7-8M15 8h5v5"/></svg>',
+  total: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5M4.8 9A8 8 0 1 1 4 14"/><path d="M12 7v5l3 2"/></svg>',
+  average: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M9 2h6M12 5v3M12 13l3-2"/></svg>',
+  longest: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M7 10l5-5 5 5M5 20h14"/></svg>',
+  shortest: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-7 12h6l-1 8 7-12h-6z"/></svg>',
+  frequency: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-5 4 10 3-7 2 2h4"/></svg>',
+  gap: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8v8M15 8v8"/></svg>',
+  daily: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18M8 14h3"/></svg>',
+  hours: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>'
+};
+function vodStatTile(icon, value, label, detail = '') {
+  return `<article class="vod-stat-tile"><span class="vod-stat-icon" aria-hidden="true">${vodStatIcons[icon] || ''}</span><strong>${value}</strong><small>${label}</small>${detail ? `<p>${detail}</p>` : ''}</article>`;
+}
+function formatVodTimestamp(timestamp) {
+  if (!Number.isFinite(timestamp)) return 'Brak danych';
+  return formatVodDate(new Date(timestamp).toISOString().slice(0, 10));
+}
+function renderVodSeasonDetail(season) {
+  if (!vodSeasonView || !season) return;
+  const stats = calculateVodStats(season);
+  const range = vodSeasonRange(season);
+  const maxMonthCount = Math.max(1, ...stats.months.map(month => month.count));
+  const archiveKnown = stats.available.length + stats.lost.length;
+  const availableWidth = stats.total ? stats.available.length / stats.total * 100 : 0;
+  const lostWidth = stats.total ? stats.lost.length / stats.total * 100 : 0;
+  const monthRows = stats.months.length ? stats.months.map(month => {
+    const label = new Intl.DateTimeFormat('pl-PL', {month:'long', year:'numeric', timeZone:'UTC'}).format(parseVodDay(`${month.key}-01`));
+    const width = month.count / maxMonthCount * 100;
+    return `<div class="vod-month-row"><strong>${label}</strong><span class="vod-month-track" aria-hidden="true"><i style="width:${width}%"></i></span><b>${month.count}</b><small>${formatVodDuration(month.duration)}</small></div>`;
+  }).join('') : '<p class="vod-month-empty">Miesiące pojawią się po dodaniu dat streamów.</p>';
+  const durationDetail = stats.durationStreams.length ? `Na podstawie ${stats.durationStreams.length} z ${stats.total}` : 'Brak danych o czasie';
+  const longestBreakDetail = stats.longestBreak ? `${formatVodTimestamp(stats.longestBreak.from)} → ${formatVodTimestamp(stats.longestBreak.to)}` : 'Brak danych o datach';
+  const typicalHours = stats.typicalStart === null ? '—' : `${formatVodClock(stats.typicalStart)}${stats.typicalEnd === null ? '' : ` → ~${formatVodClock(stats.typicalEnd)}`}`;
+  vodSeasonView.innerHTML = `<div class="vod-season-detail-header"><a class="vod-season-back" href="#vody" aria-label="Wróć do sezonów">←</a><div class="vod-season-identity"><small>PLATFORMA: ${vodEscape(season.platform).toLocaleUpperCase('pl')}</small><h1 id="vod-season-title">${vodEscape(season.title)}</h1><p>${vodStreamCountLabel(stats.total)} <span>·</span> ${formatVodDate(range.start)} — ${formatVodDate(range.end)}</p></div><aside><span>O sezonie</span><p>${vodEscape(season.description)}.</p></aside></div><div class="vod-season-detail-actions"><button class="vod-stats-toggle active" type="button" data-vod-stats-toggle aria-expanded="true" aria-controls="vod-season-stats"><span aria-hidden="true">${vodStatIcons.chart}</span> Statystyki</button></div><section class="panel vod-stats-panel" id="vod-season-stats" aria-labelledby="vod-stats-title"><div class="vod-stats-overview"><div><small id="vod-stats-title">STREAMY</small><p><strong>${stats.total}</strong> ${vodStreamNoun(stats.total)} <b class="vod-count-music">${stats.music}</b> muzyka <b class="vod-count-games">${stats.games}</b> gierki</p></div><span>Dane <strong>${stats.detailed}/${stats.total}</strong></span></div><div class="vod-archive-summary"><div class="vod-archive-heading"><span>DOSTĘPNOŚĆ ARCHIWUM</span><span>lost media <strong>${archiveKnown ? stats.lost.length : '—'}</strong></span></div><div class="vod-archive-track" role="img" aria-label="${stats.available.length} zachowanych, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu"><i class="available" style="width:${availableWidth}%"></i><i class="lost" style="width:${lostWidth}%"></i></div><div class="vod-archive-labels"><span>${stats.available.length} zachowanych</span><span>${stats.lost.length} lost media · ${stats.unknownArchive} bez statusu</span></div></div>${stats.detailed < stats.total ? `<p class="vod-stats-notice"><span aria-hidden="true">i</span> Statystyki uzupełnią się automatycznie po dodaniu dat, godzin, kategorii i czasu streamów.</p>` : ''}<section class="vod-stat-section"><h2>CZAS STREAMÓW</h2><div class="vod-stat-grid">${vodStatTile('total', formatVodDuration(stats.totalDuration), 'ŁĄCZNIE NA STREAMIE', durationDetail)}${vodStatTile('average', formatVodDuration(stats.averageDuration), 'ŚREDNI CZAS STREAMA', durationDetail)}${vodStatTile('longest', formatVodDuration(stats.longest?.durationMinutes), 'NAJDŁUŻSZY STREAM', vodStreamSummary(stats.longest))}${vodStatTile('shortest', formatVodDuration(stats.shortest?.durationMinutes), 'NAJKRÓTSZY STREAM', vodStreamSummary(stats.shortest))}</div></section><section class="vod-stat-section"><h2>RYTM</h2><div class="vod-stat-grid">${vodStatTile('frequency', formatVodDays(stats.averageFrequency, 'co '), 'CZĘSTOTLIWOŚĆ', stats.dated.length > 1 ? `${formatVodDate(vodDateKey(stats.dated[0].stream))} → ${formatVodDate(vodDateKey(stats.dated.at(-1).stream))}` : 'Brak danych o datach')}${vodStatTile('gap', formatVodDays(stats.longestBreak?.days), 'NAJDŁUŻSZA PRZERWA', longestBreakDetail)}${vodStatTile('daily', formatVodDays(stats.longestDaily), 'NAJDŁUŻSZE DAILY', stats.longestDaily ? 'Kolejne dni ze streamem' : 'Brak danych o datach')}${vodStatTile('hours', typicalHours, 'TYPOWE GODZINY', stats.typicalStart === null ? 'Brak danych o godzinach' : 'Średnia pora rozpoczęcia i zakończenia')}</div></section><section class="vod-stat-section vod-months"><h2>STREAMY WG MIESIĘCY</h2>${monthRows}</section></section>`;
+}
+vodSearch?.addEventListener('input', renderVodSeasons);
+vodSeasonView?.addEventListener('click', event => {
+  const toggle = event.target.closest('[data-vod-stats-toggle]');
+  if (!toggle) return;
+  const panel = vodSeasonView.querySelector('#vod-season-stats');
+  const expanded = toggle.getAttribute('aria-expanded') === 'true';
+  toggle.setAttribute('aria-expanded', String(!expanded));
+  toggle.classList.toggle('active', !expanded);
+  panel.hidden = expanded;
 });
+renderVodSeasons();
 
 const clipsSearch = document.querySelector('#clips-search');
 const clipsList = document.querySelector('#clips-list');
@@ -925,7 +1107,11 @@ async function updatePageView(hash = location.hash, animate = true) {
   const requested = hash.replace(/^#/, '');
   const actorSlug = requested.startsWith('aktorzy/') ? requested.slice('aktorzy/'.length) : '';
   const selectedActor = actorSlug ? actors.find(actor => actor.slug === actorSlug) : null;
-  const activePage = selectedActor ? 'aktor-szczegoly' : pages[requested] ? requested : actorSlug ? 'aktorzy' : 'home';
+  const encodedVodSeasonSlug = requested.startsWith('vody/') ? requested.slice('vody/'.length) : '';
+  let vodSeasonSlug = encodedVodSeasonSlug;
+  try { vodSeasonSlug = decodeURIComponent(encodedVodSeasonSlug); } catch {}
+  const selectedVodSeason = vodSeasonSlug ? vodSeasons.find(season => season.slug === vodSeasonSlug) : null;
+  const activePage = selectedActor ? 'aktor-szczegoly' : selectedVodSeason ? 'vod-sezon' : pages[requested] ? requested : actorSlug ? 'aktorzy' : vodSeasonSlug ? 'vody' : 'home';
   const previousPage = currentPageKey;
   if (previousPage === 'aktorzy' && activePage === 'aktor-szczegoly') actorListScrollY = window.scrollY;
   const returningToActorList = previousPage === 'aktor-szczegoly' && activePage === 'aktorzy';
@@ -940,6 +1126,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     if (transitionId !== pageTransitionId) return;
   }
   if (selectedActor) renderActorDetail(selectedActor);
+  if (selectedVodSeason) renderVodSeasonDetail(selectedVodSeason);
   currentPageKey = activePage;
   document.querySelectorAll('[data-page-view]').forEach(view => {
     const current = view.dataset.pageView === activePage;
@@ -951,12 +1138,12 @@ async function updatePageView(hash = location.hash, animate = true) {
     }
   });
   document.querySelectorAll('.archive-nav .topbar-item').forEach(item => {
-    const current = activePage === 'home' ? item.getAttribute('href') === '#' : activePage === 'aktor-szczegoly' ? item.getAttribute('href') === '#aktorzy' : item.getAttribute('href') === '#' + activePage;
+    const current = activePage === 'home' ? item.getAttribute('href') === '#' : activePage === 'aktor-szczegoly' ? item.getAttribute('href') === '#aktorzy' : activePage === 'vod-sezon' ? item.getAttribute('href') === '#vody' : item.getAttribute('href') === '#' + activePage;
     item.classList.toggle('is-current', current);
     if (current) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
-  document.title = activePage === 'home' ? 'BTKJ Archive' : selectedActor ? selectedActor.name + ' — Aktorzy — BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
+  document.title = activePage === 'home' ? 'BTKJ Archive' : selectedActor ? selectedActor.name + ' — Aktorzy — BTKJ Archive' : selectedVodSeason ? selectedVodSeason.title + ' — VODy — BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');
