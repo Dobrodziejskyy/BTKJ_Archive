@@ -509,6 +509,40 @@ vodSearch?.addEventListener('input', () => {
   vodEmpty.hidden = visible > 0;
 });
 
+const clipsSearch = document.querySelector('#clips-search');
+const clipsList = document.querySelector('#clips-list');
+const clipsEmpty = document.querySelector('#clips-empty');
+const clipsVisibleCount = document.querySelector('#clips-visible-count');
+const clipPlayerDialog = document.querySelector('#clip-player-dialog');
+const clipPlayerFrame = document.querySelector('#clip-player-frame');
+const normalizeClipSearch = value => String(value).toLocaleLowerCase('pl').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[.+/_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+function renderClips() {
+  const queryTokens = normalizeClipSearch(clipsSearch?.value).split(' ').filter(Boolean);
+  let visible = 0;
+  clipsList?.querySelectorAll('[data-clip-search]').forEach(card => {
+    const searchText = normalizeClipSearch(card.dataset.clipSearch);
+    const matches = queryTokens.every(token => searchText.includes(token));
+    card.hidden = !matches;
+    if (matches) visible += 1;
+  });
+  if (clipsList) clipsList.hidden = visible === 0;
+  if (clipsEmpty) clipsEmpty.hidden = visible !== 0;
+  if (clipsVisibleCount) clipsVisibleCount.textContent = `${visible} ${visible === 1 ? 'klip' : visible >= 2 && visible <= 4 ? 'klipy' : 'klipów'}`;
+}
+clipsSearch?.addEventListener('input', renderClips);
+clipsList?.addEventListener('click', event => {
+  const card = event.target.closest('[data-clip-id]');
+  if (!card || !clipPlayerDialog || !clipPlayerFrame) return;
+  const embedUrl = new URL('https://clips.twitch.tv/embed');
+  embedUrl.searchParams.set('clip', card.dataset.clipId);
+  embedUrl.searchParams.set('parent', location.hostname || 'localhost');
+  embedUrl.searchParams.set('autoplay', 'true');
+  clipPlayerFrame.src = embedUrl;
+  if (!clipPlayerDialog.open) clipPlayerDialog.showModal();
+});
+clipPlayerDialog?.addEventListener('close', () => clipPlayerFrame.removeAttribute('src'));
+renderClips();
+
 const promiseEntries = [{
   id: 'outlast-1k', date: '12 Kwietnia 2021r', promiseDate: '2021-04-12', time: '', title: 'Outlast na 1k obserwujących Twitch', status: 'done',
   priority: 3, source: 'brak źródła', details: 'obietnica na stream', platform: 'stream', pinned: false, modifiedRecently: false, resolvedAt: '2021-04-12', archived: false
