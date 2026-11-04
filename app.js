@@ -507,7 +507,14 @@ const vodSeasons = [{
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
     durationMinutes: 250, category: 'games', archiveStatus: 'lost',
     description: 'Pierwszy stream wiesia palety na GTA V RP. Jazda na sadowniku z jakimś menelem. Sneak peak odcinka na yt i opinia crisa o jego nowym filmie. Dodawanie do kontaktów Marcello ziomka od pożyczek i nauka ortografii.',
-    contentScore: 0, contentNote: 'nic ciekawego', url: ''
+    contentScore: 0, contentNote: 'nic ciekawego', url: '',
+    actors: [{name:'Menel Sadownik', role:'Współpracownik na pracy sadownika.'}],
+    clips: [
+      {id:'IncredulousBoringDadOSfrog', title:'Jazda na prace sadownika', date:'2020-05-23', url:'https://clips.twitch.tv/IncredulousBoringDadOSfrog?tt_content=url&tt_medium=clips_api'},
+      {id:'DiligentConcernedBasenjiKlappa', title:'Jazda na meline.', date:'2020-05-23', url:'https://clips.twitch.tv/DiligentConcernedBasenjiKlappa?tt_content=url&tt_medium=clips_api'},
+      {id:'SmellyFaintEndiveHumbleLife', title:'Sneakpeak nowego odcinka', date:'2020-05-23', url:'https://clips.twitch.tv/SmellyFaintEndiveHumbleLife?tt_content=url&tt_medium=clips_api'},
+      {id:'EncouragingChillySpiderHumbleLife', title:'Zapisywanie numeru do ziomka od pożyczek.', date:'2020-05-23', url:'https://clips.twitch.tv/EncouragingChillySpiderHumbleLife?tt_content=url&tt_medium=clips_api'}
+    ]
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
@@ -638,7 +645,7 @@ function renderVodSeasons() {
   const visible = vodSeasons.filter(season => {
     const stats = calculateVodStats(season);
     const range = vodSeasonRange(season);
-    const searchText = [season.title, season.platform, season.description, vodStreamCountLabel(stats.total), formatVodDate(range.start), formatVodDate(range.end), ...(season.streams || []).flatMap(stream => [stream.title, stream.category, stream.description, stream.contentNote, vodDateKey(stream), vodTimeRange(stream)])].join(' ').toLocaleLowerCase('pl');
+    const searchText = [season.title, season.platform, season.description, vodStreamCountLabel(stats.total), formatVodDate(range.start), formatVodDate(range.end), ...(season.streams || []).flatMap(stream => [stream.title, stream.category, stream.description, stream.contentNote, vodDateKey(stream), vodTimeRange(stream), ...(stream.actors || []).flatMap(actor => [actor.name, actor.role]), ...(stream.clips || []).flatMap(clip => [clip.title, clip.date])])].join(' ').toLocaleLowerCase('pl');
     return !query || searchText.includes(query);
   });
   vodSeasonList.innerHTML = visible.map(season => {
@@ -737,12 +744,34 @@ function vodStreamListMarkup(season) {
   const entrySuffix = streams.length === 1 ? 'wpis' : streams.length % 10 >= 2 && streams.length % 10 <= 4 && (streams.length % 100 < 12 || streams.length % 100 > 14) ? 'wpisy' : 'wpisów';
   return `<section class="vod-streams-section" aria-labelledby="vod-streams-title"><div class="vod-streams-summary"><strong id="vod-streams-title">${streams.length} ${entrySuffix}</strong><span>${streams.length} z ${total} uzupełnionych</span></div>${groupMarkup}</section>`;
 }
+function vodStreamActorsMarkup(stream) {
+  const actors = Array.isArray(stream?.actors) ? stream.actors : [];
+  if (!actors.length) return '';
+  const actorLabel = actors.length === 1 ? '1 osoba' : `${actors.length} osoby`;
+  const cards = actors.map(actor => {
+    const initials = String(actor.name || '').split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toLocaleUpperCase('pl') || '?';
+    return `<article class="vod-stream-actor"><span class="vod-stream-actor-avatar" aria-hidden="true">${vodEscape(initials)}</span><div><h3>${vodEscape(actor.name)}</h3><p><span>Rola</span>${vodEscape(actor.role)}</p></div></article>`;
+  }).join('');
+  return `<section class="vod-stream-related-section" aria-labelledby="vod-stream-actors-title"><div class="vod-stream-related-heading"><h2 id="vod-stream-actors-title">Aktorzy</h2><span>${actorLabel}</span></div><div class="panel vod-stream-actors-panel">${cards}</div></section>`;
+}
+function vodStreamClipCardMarkup(clip, stream) {
+  const date = parseVodDay(clip?.date) !== null ? clip.date : vodDateKey(stream);
+  const dateLabel = formatVodDate(date);
+  return `<button class="clip-card" type="button" data-clip-id="${vodEscape(clip.id)}" data-clip-search="${vodEscape(`${clip.title} ${dateLabel} ${date}`)}" aria-label="Odtwórz klip ${vodEscape(clip.title)} w odtwarzaczu"><span class="clip-preview" aria-hidden="true"><iframe class="clip-preview-frame" data-clip-preview title="Pierwsza klatka klipu ${vodEscape(clip.title)}" tabindex="-1" loading="lazy"></iframe></span><span class="clip-content"><strong>${vodEscape(clip.title)}</strong><time datetime="${date}">${dateLabel}</time><span class="clip-open">Odtwórz klip <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span></span></button>`;
+}
+function vodStreamClipsMarkup(stream) {
+  const clips = Array.isArray(stream?.clips) ? stream.clips : [];
+  if (!clips.length) return '';
+  const clipLabel = `${clips.length} ${clips.length === 1 ? 'klip' : clips.length >= 2 && clips.length <= 4 ? 'klipy' : 'klipów'}`;
+  return `<section class="vod-stream-related-section" aria-labelledby="vod-stream-clips-title"><div class="vod-stream-related-heading"><h2 id="vod-stream-clips-title">Klipy ze stream</h2><span>${clipLabel}</span></div><div class="panel clips-list vod-stream-clips-grid">${clips.map(clip => vodStreamClipCardMarkup(clip, stream)).join('')}</div></section>`;
+}
 function renderVodStreamDetail(season, stream) {
   if (!vodStreamView || !season || !stream) return;
   const number = vodStreamNumber(season, stream);
   const lost = vodArchiveStatus(stream) === 'lost';
   const source = stream.url ? `<a class="vod-stream-source-link" href="${vodEscape(stream.url)}" target="_blank" rel="noopener noreferrer">Otwórz zapis streamu ↗</a>` : '<span class="vod-stream-source-missing">Brak linku — stream jest lost media.</span>';
-  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${lost ? '<span class="vod-lost-badge">LOST MEDIA</span>' : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><h2>${vodEscape(stream.title)}</h2><dl><div><dt>Data</dt><dd><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time></dd></div><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${vodContentMeterMarkup(stream, 'vod-stream-detail-meter', true)}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>`;
+  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${lost ? '<span class="vod-lost-badge">LOST MEDIA</span>' : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><h2>${vodEscape(stream.title)}</h2><dl><div><dt>Data</dt><dd><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time></dd></div><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${vodContentMeterMarkup(stream, 'vod-stream-detail-meter', true)}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>${vodStreamActorsMarkup(stream)}${vodStreamClipsMarkup(stream)}`;
+  hydrateClipPreviews(vodStreamView);
 }
 function renderVodSeasonDetail(season) {
   if (!vodSeasonView || !season) return;
@@ -797,6 +826,8 @@ const clipsEmpty = document.querySelector('#clips-empty');
 const clipsVisibleCount = document.querySelector('#clips-visible-count');
 const clipPlayerDialog = document.querySelector('#clip-player-dialog');
 const clipPlayerFrame = document.querySelector('#clip-player-frame');
+const clipPlayerTitle = document.querySelector('#clip-player-title');
+const clipPlayerTime = clipPlayerDialog?.querySelector('.clip-player-meta time');
 const normalizeClipSearch = value => String(value).toLocaleLowerCase('pl').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[.+/_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 function getClipEmbedUrl(clipId, autoplay) {
   const embedUrl = new URL('https://clips.twitch.tv/embed');
@@ -804,6 +835,28 @@ function getClipEmbedUrl(clipId, autoplay) {
   embedUrl.searchParams.set('parent', location.hostname || 'localhost');
   embedUrl.searchParams.set('autoplay', String(autoplay));
   return embedUrl;
+}
+function hydrateClipPreviews(root = document) {
+  root?.querySelectorAll('[data-clip-id]').forEach(card => {
+    const preview = card.querySelector('[data-clip-preview]');
+    if (preview && !preview.hasAttribute('src')) preview.src = getClipEmbedUrl(card.dataset.clipId, false);
+  });
+}
+function openClipPlayer(card) {
+  if (!card || !clipPlayerDialog || !clipPlayerFrame) return;
+  const title = card.querySelector('.clip-content>strong')?.textContent?.trim() || 'Klip Twitch';
+  const sourceTime = card.querySelector('time');
+  const dateLabel = sourceTime?.textContent?.replace(/\s+/g, ' ').trim() || 'Brak daty';
+  if (clipPlayerTitle) clipPlayerTitle.textContent = title;
+  clipPlayerFrame.title = `Odtwarzacz klipu ${title}`;
+  clipPlayerFrame.src = getClipEmbedUrl(card.dataset.clipId, true);
+  if (clipPlayerTime) {
+    clipPlayerTime.textContent = dateLabel;
+    const datetime = sourceTime?.getAttribute('datetime');
+    if (datetime) clipPlayerTime.setAttribute('datetime', datetime);
+    else clipPlayerTime.removeAttribute('datetime');
+  }
+  if (!clipPlayerDialog.open) clipPlayerDialog.showModal();
 }
 function renderClips() {
   const queryTokens = normalizeClipSearch(clipsSearch?.value).split(' ').filter(Boolean);
@@ -819,15 +872,10 @@ function renderClips() {
   if (clipsVisibleCount) clipsVisibleCount.textContent = `${visible} ${visible === 1 ? 'klip' : visible >= 2 && visible <= 4 ? 'klipy' : 'klipów'}`;
 }
 clipsSearch?.addEventListener('input', renderClips);
-clipsList?.querySelectorAll('[data-clip-id]').forEach(card => {
-  const preview = card.querySelector('[data-clip-preview]');
-  if (preview) preview.src = getClipEmbedUrl(card.dataset.clipId, false);
-});
-clipsList?.addEventListener('click', event => {
+hydrateClipPreviews(clipsList);
+document.addEventListener('click', event => {
   const card = event.target.closest('[data-clip-id]');
-  if (!card || !clipPlayerDialog || !clipPlayerFrame) return;
-  clipPlayerFrame.src = getClipEmbedUrl(card.dataset.clipId, true);
-  if (!clipPlayerDialog.open) clipPlayerDialog.showModal();
+  if (card) openClipPlayer(card);
 });
 clipPlayerDialog?.addEventListener('close', () => clipPlayerFrame.removeAttribute('src'));
 renderClips();
