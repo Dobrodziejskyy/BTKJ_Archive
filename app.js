@@ -883,13 +883,45 @@ function renderVodSeasonDetail(season) {
   if (motionAllowed()) resetVodStatistics(statsPanel);
   vodSeasonView.insertAdjacentHTML('beforeend', vodStreamListMarkup(season));
 }
-function vodDurationFromLabel(label) {
-  const match = String(label || '').match(/^(?:(\d+)h)?(?:(\d+)min)?$/);
-  return match ? (Number(match[1]) || 0) * 60 + (Number(match[2]) || 0) : null;
+const vodAnimatedValueSelector = [
+  '.vod-stats-overview p>strong',
+  '.vod-stats-overview p>b',
+  '.vod-stats-overview>span strong',
+  '.vod-category-stat strong',
+  '.vod-category-stat small',
+  '.vod-archive-labels span',
+  '.vod-stat-tile>strong',
+  '.vod-month-row b',
+  '.vod-month-row small'
+].join(',');
+function vodZeroNumberToken(token) {
+  return token.replace(/\d/g, '0');
 }
-function vodDayValueFromLabel(label) {
-  const match = String(label || '').match(/^(co )?([\d,.]+) (?:dzień|dni)$/);
-  return match ? {value:Number(match[2].replace(',', '.')), prefix:match[1] || ''} : null;
+function vodZeroText(label) {
+  return String(label || '').replace(/\d+(?:[,.]\d+)?/g, vodZeroNumberToken);
+}
+function animateVodText(element, duration, shouldContinue) {
+  const targetText = element.dataset.targetLabel || element.textContent.trim();
+  const tokens = [...targetText.matchAll(/\d+(?:[,.]\d+)?/g)];
+  if (!tokens.length) return;
+  let start;
+  const step = now => {
+    if (!shouldContinue()) return;
+    start ??= now;
+    const progress = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    element.textContent = targetText.replace(/\d+(?:[,.]\d+)?/g, token => {
+      const decimal = token.includes(',') ? ',' : token.includes('.') ? '.' : '';
+      const decimals = decimal ? token.split(decimal)[1].length : 0;
+      const target = Number(token.replace(',', '.'));
+      const value = target * eased;
+      if (progress === 1) return token;
+      const rendered = decimals ? value.toFixed(decimals) : String(Math.round(value));
+      return decimal === ',' ? rendered.replace('.', ',') : rendered;
+    });
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 function resetVodStatistics(panel) {
   if (!panel) return;
@@ -900,16 +932,9 @@ function resetVodStatistics(panel) {
     bar.dataset.targetWidth ||= bar.style.width;
     bar.style.width = '0%';
   });
-  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
-    number.dataset.targetValue ||= number.textContent.trim();
-    number.textContent = '0';
-  });
-  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
+  panel.querySelectorAll(vodAnimatedValueSelector).forEach(number => {
     number.dataset.targetLabel ||= number.textContent.trim();
-    const duration = vodDurationFromLabel(number.dataset.targetLabel);
-    const days = vodDayValueFromLabel(number.dataset.targetLabel);
-    if (duration !== null) number.textContent = formatVodDurationZero(0);
-    else if (days) number.textContent = formatVodDays(0, days.prefix);
+    number.textContent = vodZeroText(number.dataset.targetLabel);
   });
 }
 function animateVodStatistics(panel) {
@@ -919,16 +944,8 @@ function animateVodStatistics(panel) {
   const isCurrent = () => panel.isConnected && panel.dataset.vodAnimationRun === run && panel.getAttribute('aria-hidden') !== 'true';
   void panel.offsetWidth;
   panel.classList.remove('vod-stats-reset');
-  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
-    const target = Number(number.dataset.targetValue);
-    if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720, isCurrent);
-  });
-  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
-    const targetLabel = number.dataset.targetLabel || '';
-    const duration = vodDurationFromLabel(targetLabel);
-    const days = vodDayValueFromLabel(targetLabel);
-    if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820, isCurrent);
-    else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760, isCurrent);
+  panel.querySelectorAll(vodAnimatedValueSelector).forEach((number, index) => {
+    animateVodText(number, 720 + Math.min(index, 8) * 18, isCurrent);
   });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!isCurrent()) return;
