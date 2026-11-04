@@ -523,7 +523,7 @@ renderMediaCatalog();
 // status, gdy nie ma materiałów.
 // Wszystkie wartości w panelu sezonu są liczone z tych rekordów.
 const vodSeasons = [{
-  slug: 'prequel', number: 1, title: 'Prequel', platform: 'Twitch',
+  slug: 'prequel', number: 0, title: 'Prequel', platform: 'Twitch',
   description: 'Pierwszy sezon archiwum', startDate: '2020-05-23', endDate: '2020-10-15',
   knownStreamCount: 8, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
