@@ -695,6 +695,19 @@ function vodStreamNumber(season, stream) {
 function vodStreamCategoryLabel(stream) {
   return ['games','gierki'].includes(stream?.category) ? 'Gierki' : ['music','muzyka'].includes(stream?.category) ? 'Muzyka' : 'Bez kategorii';
 }
+function vodContentScore(stream) {
+  const rawScore = Number(stream?.contentScore);
+  return Math.max(0, Math.min(4, Number.isFinite(rawScore) ? Math.round(rawScore) : 0));
+}
+function vodContentMeterLabel(stream) {
+  return `Kontentomierz ${vodContentScore(stream)}/4${stream?.contentNote ? ` (${stream.contentNote})` : ''}`;
+}
+function vodContentMeterMarkup(stream, className = '', focusable = false) {
+  const score = vodContentScore(stream);
+  const label = vodContentMeterLabel(stream);
+  const flames = Array.from({length:4}, (_, index) => `<svg${index < score ? ' class="is-active"' : ''} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4.97 0 9-3.58 9-8 0-1.69-.65-3.38-2-4.5.5 2.5-1 3.5-1 3.5.5-5.5-3-9.5-8-11 1 4.5-2 7-2 7 .5-1.5-1-2.5-1-2.5C5.17 8.15 3 10.88 3 14c0 4.42 4.03 8 9 8Z"/></svg>`).join('');
+  return `<span class="vod-content-meter${className ? ` ${className}` : ''}" role="img" aria-label="${vodEscape(label)}" data-tooltip="${vodEscape(label)}"${focusable ? ' tabindex="0"' : ''}>${flames}</span>`;
+}
 function vodLostThumbnailMarkup(stream, large = false) {
   return `<span class="vod-stream-lost-thumb${large ? ' large' : ''}" role="img" aria-label="Brak zachowanej miniatury streamu ${vodEscape(stream.title)}"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="25" height="24" rx="4"/><path d="m33 20 8-5v18l-8-5M6 6l36 36"/></svg><small>LOST MEDIA</small></span>`;
 }
@@ -715,7 +728,9 @@ function vodStreamListMarkup(season) {
     const cards = entries.map(stream => {
       const number = vodStreamNumber(season, stream);
       const lost = vodArchiveStatus(stream) === 'lost';
-      return `<a class="vod-stream-card" href="#vody/${encodeURIComponent(season.slug)}/${encodeURIComponent(stream.slug)}" aria-label="Otwórz stream ${vodEscape(stream.title)}"><span class="vod-stream-number">${number}</span>${vodLostThumbnailMarkup(stream)}<span class="vod-stream-card-body"><span class="vod-stream-card-meta"><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time><span>${vodTimeRange(stream)}</span><span>${formatVodDurationShort(stream.durationMinutes)}</span>${lost ? '<b>LOST MEDIA</b>' : ''}</span><strong>${vodEscape(stream.title)}</strong><span class="vod-stream-card-description">${vodEscape(stream.description)}</span><span class="vod-stream-card-bottom"><span>Kontentomierz <b>${Number(stream.contentScore) || 0}</b>${stream.contentNote ? ` (${vodEscape(stream.contentNote)})` : ''}</span><span>${lost ? 'Brak zapisu' : vodStreamCategoryLabel(stream)}</span></span></span><span class="vod-stream-chevron" aria-hidden="true">›</span></a>`;
+      const meter = vodContentMeterMarkup(stream, 'vod-stream-card-meter');
+      const contentLabel = vodContentMeterLabel(stream);
+      return `<a class="vod-stream-card" href="#vody/${encodeURIComponent(season.slug)}/${encodeURIComponent(stream.slug)}" aria-label="Otwórz stream ${vodEscape(stream.title)}; ${vodEscape(contentLabel)}"><span class="vod-stream-number">${number}</span>${vodLostThumbnailMarkup(stream)}<span class="vod-stream-card-body"><span class="vod-stream-card-head"><span class="vod-stream-card-meta"><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time><span>${vodTimeRange(stream)}</span><span>${formatVodDurationShort(stream.durationMinutes)}</span>${lost ? '<b>LOST MEDIA</b>' : ''}</span>${meter}</span><strong>${vodEscape(stream.title)}</strong><span class="vod-stream-card-description">${vodEscape(stream.description)}</span><span class="vod-stream-card-bottom"><span>${lost ? 'Brak zapisu' : vodStreamCategoryLabel(stream)}</span></span></span><span class="vod-stream-chevron" aria-hidden="true">›</span></a>`;
     }).join('');
     return `<section class="panel vod-stream-month" aria-labelledby="vod-month-${monthKey}"><h2 id="vod-month-${monthKey}">${monthLabel}</h2><div class="vod-stream-month-list">${cards}</div></section>`;
   }).join('');
@@ -727,7 +742,7 @@ function renderVodStreamDetail(season, stream) {
   const number = vodStreamNumber(season, stream);
   const lost = vodArchiveStatus(stream) === 'lost';
   const source = stream.url ? `<a class="vod-stream-source-link" href="${vodEscape(stream.url)}" target="_blank" rel="noopener noreferrer">Otwórz zapis streamu ↗</a>` : '<span class="vod-stream-source-missing">Brak linku — stream jest lost media.</span>';
-  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${lost ? '<span class="vod-lost-badge">LOST MEDIA</span>' : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time><dl><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${Number(stream.contentScore) || 0}${stream.contentNote ? ` (${vodEscape(stream.contentNote)})` : ''}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>`;
+  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${lost ? '<span class="vod-lost-badge">LOST MEDIA</span>' : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><h2>${vodEscape(stream.title)}</h2><dl><div><dt>Data</dt><dd><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time></dd></div><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${vodContentMeterMarkup(stream, 'vod-stream-detail-meter', true)}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>`;
 }
 function renderVodSeasonDetail(season) {
   if (!vodSeasonView || !season) return;
