@@ -556,6 +556,12 @@ const vodSeasons = [{
       {id:'SpinelessFineWolfOptimizePrime', title:'Crisu gej?', date:'2020-05-24', url:'https://clips.twitch.tv/SpinelessFineWolfOptimizePrime?tt_content=url&tt_medium=clips_api'},
       {id:'SpunkyInnocentCheeseVoteNay', title:'Siema kutasik', date:'2020-05-24', url:'https://clips.twitch.tv/SpunkyInnocentCheeseVoteNay?tt_content=url&tt_medium=clips_api'}
     ]
+  }, {
+    slug: 'rp-wesley-craft-fastlife-rp', title: 'RP ⭐Wesley Craft ⭐ FastLife RP',
+    startedAt: '2020-05-27T16:52:00+02:00', endedAt: '2020-05-27T23:45:00+02:00',
+    durationMinutes: 413, category: 'games',
+    description: 'Nowy serwer GTA V RP, sprawdzanie strony Towarzysza Twitch i ubieranie postaci. W trakcie pojawiają się też chwile z Forza Horizon 4.',
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
