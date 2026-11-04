@@ -759,7 +759,13 @@ function updateVodSeasonCarousel(index = vodSeasonCarouselIndex, animate = true)
   const cards = [...(vodSeasonList?.querySelectorAll('.vod-season-card') || [])];
   const total = cards.length;
   vodSeasonCarouselIndex = Math.max(0, Math.min(Number(index) || 0, Math.max(0, total - 1)));
-  cards.forEach((card, cardIndex) => card.classList.toggle('is-active', cardIndex === vodSeasonCarouselIndex));
+  cards.forEach((card, cardIndex) => {
+    const distance = Math.abs(cardIndex - vodSeasonCarouselIndex);
+    card.classList.toggle('is-active', distance === 0);
+    card.classList.toggle('is-neighbor', distance === 1);
+    card.tabIndex = distance <= 1 ? 0 : -1;
+    card.setAttribute('aria-hidden', distance <= 1 ? 'false' : 'true');
+  });
   if (vodSeasonList && vodSeasonViewport && total) {
     const card = cards[vodSeasonCarouselIndex];
     const offset = (vodSeasonViewport.clientWidth - card.offsetWidth) / 2 - card.offsetLeft;
@@ -798,6 +804,16 @@ function renderVodSeasons() {
 }
 vodSeasonPrev?.addEventListener('click', () => updateVodSeasonCarousel(vodSeasonCarouselIndex - 1));
 vodSeasonNext?.addEventListener('click', () => updateVodSeasonCarousel(vodSeasonCarouselIndex + 1));
+vodSeasonList?.addEventListener('click', event => {
+  const card = event.target.closest('.vod-season-card');
+  if (!card) return;
+  const cards = [...vodSeasonList.querySelectorAll('.vod-season-card')];
+  const cardIndex = cards.indexOf(card);
+  if (cardIndex !== vodSeasonCarouselIndex) {
+    event.preventDefault();
+    updateVodSeasonCarousel(cardIndex);
+  }
+});
 vodSeasonDots?.addEventListener('click', event => {
   const dot = event.target.closest('[data-vod-season-slide]');
   if (dot) updateVodSeasonCarousel(Number(dot.dataset.vodSeasonSlide));
