@@ -559,9 +559,15 @@ const vodSeasons = [{
   }, {
     slug: 'rp-wesley-craft-fastlife-rp', title: 'RP ⭐Wesley Craft ⭐ FastLife RP',
     startedAt: '2020-05-27T16:52:00+02:00', endedAt: '2020-05-27T23:45:00+02:00',
-    durationMinutes: 413, category: 'games', archiveStatus: 'lost',
+    durationMinutes: 413, category: 'games', archiveStatus: 'partial',
     description: 'Nowy serwer GTA V RP, sprawdzanie strony Towarzysza Twitch i ubieranie postaci. W trakcie pojawiają się też chwile z Forza Horizon 4.',
-    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
+    clips: [
+      {id:'SplendidArborealPartridgeRuleFive', title:'Egzekucja gangusów', date:'2020-05-27', url:'https://clips.twitch.tv/SplendidArborealPartridgeRuleFive?tt_content=url&tt_medium=clips_api', catalog:true},
+      {id:'SpicyAggressiveGrasshopperOMGScoots', title:'Stachu', date:'2020-05-27', url:'https://clips.twitch.tv/SpicyAggressiveGrasshopperOMGScoots?tt_content=url&tt_medium=clips_api', catalog:true},
+      {id:'TenderAmazingPorpoiseImGlitch', title:'Ubieranie npcta', date:'2020-05-27', url:'https://clips.twitch.tv/TenderAmazingPorpoiseImGlitch?tt_content=url&tt_medium=clips_api', catalog:true},
+      {id:'EasyPatientBasenji4Head', title:'Co daje towarzysz twitch', date:'2020-05-27', url:'https://clips.twitch.tv/EasyPatientBasenji4Head?tt_content=url&tt_medium=clips_api', catalog:true}
+    ]
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
@@ -985,6 +991,14 @@ const clipPlayerDialog = document.querySelector('#clip-player-dialog');
 const clipPlayerFrame = document.querySelector('#clip-player-frame');
 const clipPlayerTitle = document.querySelector('#clip-player-title');
 const clipPlayerTime = clipPlayerDialog?.querySelector('.clip-player-meta time');
+function populateVodClipsCatalog() {
+  if (!clipsList) return;
+  const catalogClips = vodSeasons.flatMap(season => (season.streams || []).flatMap(stream => (stream.clips || []).filter(clip => clip.catalog).map(clip => ({clip, stream}))));
+  clipsList.insertAdjacentHTML('beforeend', catalogClips.map(({clip, stream}) => vodStreamClipCardMarkup(clip, stream)).join(''));
+  const years = [...new Set([...clipsList.querySelectorAll('time[datetime]')].map(time => time.dateTime.slice(0, 4)).filter(Boolean))].sort();
+  const yearSummary = document.querySelector('.clips-summary>span');
+  if (yearSummary) yearSummary.textContent = years.length > 1 ? `${years[0]}–${years.at(-1)}` : years[0] || '';
+}
 const normalizeClipSearch = value => String(value).toLocaleLowerCase('pl').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[.+/_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 function getClipEmbedUrl(clipId, autoplay) {
   const embedUrl = new URL('https://clips.twitch.tv/embed');
@@ -1045,6 +1059,7 @@ function renderClips() {
   if (clipsVisibleCount) clipsVisibleCount.textContent = `${visible} ${visible === 1 ? 'klip' : visible >= 2 && visible <= 4 ? 'klipy' : 'klipów'}`;
 }
 clipsSearch?.addEventListener('input', renderClips);
+populateVodClipsCatalog();
 hydrateClipPreviews(clipsList);
 document.addEventListener('click', event => {
   const card = event.target.closest('[data-clip-id]');
