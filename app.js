@@ -1790,7 +1790,11 @@ function restartHomeAnimations() {
     const balance = promiseBalances[card.dataset.balance];
     const track = card.querySelector('.balance-track');
     track?.classList.remove('balance-animated', 'balance-values-visible');
-    track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = '0%'; });
+    const doneSegment = track?.querySelector('.balance-done');
+    const failedSegment = track?.querySelector('.balance-failed');
+    if (doneSegment) doneSegment.style.width = '0%';
+    if (failedSegment) failedSegment.style.width = failedSegment.dataset.width + '%';
+    track?.classList.add('balance-values-visible');
     setTimeout(() => {
       if (run !== homeAnimationRun) return;
       const isCurrent = () => run === homeAnimationRun && currentPageKey === 'home';
@@ -1801,8 +1805,8 @@ function restartHomeAnimations() {
     }, motionAllowed() ? 220 + index * 120 : 0);
     setTimeout(() => {
       if (run !== homeAnimationRun) return;
-      track?.classList.add('balance-values-visible', 'balance-animated');
-      track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
+      track?.classList.add('balance-animated');
+      if (doneSegment) doneSegment.style.width = doneSegment.dataset.width + '%';
     }, motionAllowed() ? 420 + index * 140 : 0);
   });
 }
