@@ -886,20 +886,42 @@ function vodDurationFromLabel(label) {
   const match = String(label || '').match(/^(?:(\d+)h)?(?:(\d+)min)?$/);
   return match ? (Number(match[1]) || 0) * 60 + (Number(match[2]) || 0) : null;
 }
-function animateVodStatistics(panel) {
-  if (!panel || !motionAllowed()) return;
+function vodDayValueFromLabel(label) {
+  const match = String(label || '').match(/^(co )?([\d,.]+) (?:dzień|dni)$/);
+  return match ? {value:Number(match[2].replace(',', '.')), prefix:match[1] || ''} : null;
+}
+function resetVodStatistics(panel) {
+  if (!panel) return;
   panel.classList.remove('vod-stats-animating');
   panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => {
     bar.dataset.targetWidth ||= bar.style.width;
     bar.style.width = '0%';
   });
   panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
-    const target = Number(number.textContent.trim());
+    number.dataset.targetValue ||= number.textContent.trim();
+    number.textContent = '0';
+  });
+  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
+    number.dataset.targetLabel ||= number.textContent.trim();
+    const duration = vodDurationFromLabel(number.dataset.targetLabel);
+    const days = vodDayValueFromLabel(number.dataset.targetLabel);
+    if (duration !== null) number.textContent = formatVodDurationZero(0);
+    else if (days) number.textContent = formatVodDays(0, days.prefix);
+  });
+}
+function animateVodStatistics(panel) {
+  if (!panel || !motionAllowed()) return;
+  resetVodStatistics(panel);
+  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
+    const target = Number(number.dataset.targetValue);
     if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720);
   });
   panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
-    const target = vodDurationFromLabel(number.textContent.trim());
-    if (target !== null) animateNumber(number, target, formatVodDurationZero, 820);
+    const targetLabel = number.dataset.targetLabel || '';
+    const duration = vodDurationFromLabel(targetLabel);
+    const days = vodDayValueFromLabel(targetLabel);
+    if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820);
+    else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760);
   });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     panel.classList.add('vod-stats-animating');
@@ -1381,6 +1403,7 @@ async function updatePageView(hash = location.hash, animate = true) {
   const selectedVodStream = selectedVodSeason && vodStreamSlug ? selectedVodSeason.streams.find(stream => stream.slug === vodStreamSlug) : null;
   const activePage = selectedActor ? 'aktor-szczegoly' : selectedVodStream ? 'vod-stream' : selectedVodSeason ? 'vod-sezon' : pages[requested] ? requested : actorSlug ? 'aktorzy' : vodSeasonSlug ? 'vody' : 'home';
   const previousPage = currentPageKey;
+  if (previousPage === 'vod-sezon' && activePage !== 'vod-sezon') resetVodStatistics(vodSeasonView.querySelector('#vod-season-stats'));
   if (previousPage === 'aktorzy' && activePage === 'aktor-szczegoly') actorListScrollY = window.scrollY;
   const returningToActorList = previousPage === 'aktor-szczegoly' && activePage === 'aktorzy';
   if (activePage !== 'aktor-szczegoly') actorDetailView.querySelectorAll('iframe').forEach(player => { player.src = ''; });
