@@ -678,16 +678,32 @@ function renderVodSeasonDetail(season) {
   const longestBreakDetail = stats.longestBreak ? `${formatVodTimestamp(stats.longestBreak.from)} → ${formatVodTimestamp(stats.longestBreak.to)}` : 'Brak danych o datach';
   const typicalHours = stats.typicalStart === null ? '—' : `${formatVodClock(stats.typicalStart)}${stats.typicalEnd === null ? '' : ` → ~${formatVodClock(stats.typicalEnd)}`}`;
   vodSeasonView.innerHTML = `<div class="vod-season-detail-header"><a class="vod-season-back" href="#vody" aria-label="Wróć do sezonów">←</a><div class="vod-season-identity"><small>PLATFORMA: ${vodEscape(season.platform).toLocaleUpperCase('pl')}</small><h1 id="vod-season-title">${vodEscape(season.title)}</h1><p>${vodStreamCountLabel(stats.total)} <span>·</span> ${formatVodDate(range.start)} — ${formatVodDate(range.end)}</p></div><aside><span>O sezonie</span><p>${vodEscape(season.description)}.</p></aside></div><div class="vod-season-detail-actions"><button class="vod-stats-toggle active" type="button" data-vod-stats-toggle aria-expanded="true" aria-controls="vod-season-stats"><span aria-hidden="true">${vodStatIcons.chart}</span> Statystyki</button></div><section class="panel vod-stats-panel" id="vod-season-stats" aria-labelledby="vod-stats-title"><div class="vod-stats-overview"><div><small id="vod-stats-title">STREAMY</small><p><strong>${stats.total}</strong> ${vodStreamNoun(stats.total)} <b class="vod-count-music">${stats.music}</b> muzyka <b class="vod-count-games">${stats.games}</b> gierki</p></div><span>Dane <strong>${stats.detailed}/${stats.total}</strong></span></div><div class="vod-archive-summary"><div class="vod-archive-heading"><span>DOSTĘPNOŚĆ ARCHIWUM</span><span>lost media <strong>${archiveKnown ? stats.lost.length : '—'}</strong></span></div><div class="vod-archive-track" role="img" aria-label="${stats.available.length} zachowanych, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu"><i class="available" style="width:${availableWidth}%"></i><i class="lost" style="width:${lostWidth}%"></i></div><div class="vod-archive-labels"><span>${stats.available.length} zachowanych</span><span>${stats.lost.length} lost media · ${stats.unknownArchive} bez statusu</span></div></div>${stats.detailed < stats.total ? `<p class="vod-stats-notice"><span aria-hidden="true">i</span> Statystyki uzupełnią się automatycznie po dodaniu dat, godzin, kategorii i czasu streamów.</p>` : ''}<section class="vod-stat-section"><h2>CZAS STREAMÓW</h2><div class="vod-stat-grid">${vodStatTile('total', formatVodDuration(stats.totalDuration), 'ŁĄCZNIE NA STREAMIE', durationDetail)}${vodStatTile('average', formatVodDuration(stats.averageDuration), 'ŚREDNI CZAS STREAMA', durationDetail)}${vodStatTile('longest', formatVodDuration(stats.longest?.durationMinutes), 'NAJDŁUŻSZY STREAM', vodStreamSummary(stats.longest))}${vodStatTile('shortest', formatVodDuration(stats.shortest?.durationMinutes), 'NAJKRÓTSZY STREAM', vodStreamSummary(stats.shortest))}</div></section><section class="vod-stat-section"><h2>RYTM</h2><div class="vod-stat-grid">${vodStatTile('frequency', formatVodDays(stats.averageFrequency, 'co '), 'CZĘSTOTLIWOŚĆ', stats.dated.length > 1 ? `${formatVodDate(vodDateKey(stats.dated[0].stream))} → ${formatVodDate(vodDateKey(stats.dated.at(-1).stream))}` : 'Brak danych o datach')}${vodStatTile('gap', formatVodDays(stats.longestBreak?.days), 'NAJDŁUŻSZA PRZERWA', longestBreakDetail)}${vodStatTile('daily', formatVodDays(stats.longestDaily), 'NAJDŁUŻSZE DAILY', stats.longestDaily ? 'Kolejne dni ze streamem' : 'Brak danych o datach')}${vodStatTile('hours', typicalHours, 'TYPOWE GODZINY', stats.typicalStart === null ? 'Brak danych o godzinach' : 'Średnia pora rozpoczęcia i zakończenia')}</div></section><section class="vod-stat-section vod-months"><h2>STREAMY WG MIESIĘCY</h2>${monthRows}</section></section>`;
+  const statsPanel = vodSeasonView.querySelector('#vod-season-stats');
+  const statsToggle = vodSeasonView.querySelector('[data-vod-stats-toggle]');
+  const statsReveal = document.createElement('div');
+  const statsRevealInner = document.createElement('div');
+  statsReveal.className = 'vod-stats-reveal';
+  statsRevealInner.className = 'vod-stats-reveal-inner';
+  statsPanel.before(statsReveal);
+  statsReveal.append(statsRevealInner);
+  statsRevealInner.append(statsPanel);
+  statsToggle.classList.remove('active');
+  statsToggle.setAttribute('aria-expanded', 'false');
+  statsPanel.setAttribute('aria-hidden', 'true');
+  statsPanel.inert = true;
 }
 vodSearch?.addEventListener('input', renderVodSeasons);
 vodSeasonView?.addEventListener('click', event => {
   const toggle = event.target.closest('[data-vod-stats-toggle]');
   if (!toggle) return;
   const panel = vodSeasonView.querySelector('#vod-season-stats');
+  const reveal = panel.closest('.vod-stats-reveal');
   const expanded = toggle.getAttribute('aria-expanded') === 'true';
   toggle.setAttribute('aria-expanded', String(!expanded));
   toggle.classList.toggle('active', !expanded);
-  panel.hidden = expanded;
+  reveal.classList.toggle('is-open', !expanded);
+  panel.setAttribute('aria-hidden', String(expanded));
+  panel.inert = expanded;
 });
 renderVodSeasons();
 
