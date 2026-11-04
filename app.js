@@ -569,6 +569,12 @@ const vodSeasons = [{
       {id:'TenderAmazingPorpoiseImGlitch', title:'Ubieranie npcta', date:'2020-05-27', url:'https://clips.twitch.tv/TenderAmazingPorpoiseImGlitch?tt_content=url&tt_medium=clips_api', catalog:true},
       {id:'EasyPatientBasenji4Head', title:'Co daje towarzysz twitch', date:'2020-05-27', url:'https://clips.twitch.tv/EasyPatientBasenji4Head?tt_content=url&tt_medium=clips_api', catalog:true}
     ]
+  }, {
+    slug: 'luzny-strimek-tak-o', title: 'luźny strimek tak o',
+    startedAt: '2020-05-29T21:40:00+02:00', endedAt: '2020-05-29T22:55:00+02:00',
+    durationMinutes: 75, category: 'games', archiveStatus: 'lost',
+    description: 'Teamfight Tactics i chwila League of Legends.',
+    contentScore: 0, url: '', actors: [], clips: []
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
