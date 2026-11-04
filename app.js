@@ -812,7 +812,10 @@ function vodStreamClipCardMarkup(clip, stream) {
   const dateLabel = formatVodDate(date);
   const source = clip?.source === 'archive' ? 'archive' : 'twitch';
   const sourceLabel = source === 'archive' ? 'ARCHIVE.ORG' : 'TWITCH CLIP';
-  return `<button class="clip-card${source === 'archive' ? ' archive-clip-card' : ''}" type="button" data-clip-id="${vodEscape(clip.id)}" data-clip-source="${source}" data-clip-url="${vodEscape(clip.url || '')}" data-clip-search="${vodEscape(`${clip.title} ${dateLabel} ${date} ${sourceLabel}`)}" aria-label="Odtwórz klip ${vodEscape(clip.title)} w odtwarzaczu"><span class="clip-preview" aria-hidden="true"><iframe class="clip-preview-frame" data-clip-preview title="Pierwsza klatka klipu ${vodEscape(clip.title)}" tabindex="-1" loading="lazy"></iframe><small>${sourceLabel}</small></span><span class="clip-content"><strong>${vodEscape(clip.title)}</strong><time datetime="${date}">${dateLabel}</time><span class="clip-open">Odtwórz klip <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span></span></button>`;
+  const preview = source === 'archive'
+    ? `<img class="archive-clip-thumbnail" src="https://archive.org/services/img/${encodeURIComponent(clip.id)}" alt="" loading="lazy" decoding="async">`
+    : `<iframe class="clip-preview-frame" data-clip-preview title="Pierwsza klatka klipu ${vodEscape(clip.title)}" tabindex="-1" loading="lazy"></iframe>`;
+  return `<button class="clip-card${source === 'archive' ? ' archive-clip-card' : ''}" type="button" data-clip-id="${vodEscape(clip.id)}" data-clip-source="${source}" data-clip-url="${vodEscape(clip.url || '')}" data-clip-search="${vodEscape(`${clip.title} ${dateLabel} ${date} ${sourceLabel}`)}" aria-label="Odtwórz klip ${vodEscape(clip.title)} w odtwarzaczu"><span class="clip-preview" aria-hidden="true">${preview}<small>${sourceLabel}</small></span><span class="clip-content"><strong>${vodEscape(clip.title)}</strong><time datetime="${date}">${dateLabel}</time><span class="clip-open">Odtwórz klip <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span></span></button>`;
 }
 function vodStreamClipsMarkup(stream) {
   const clips = Array.isArray(stream?.clips) ? stream.clips : [];
