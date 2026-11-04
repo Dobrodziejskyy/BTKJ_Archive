@@ -596,6 +596,12 @@ const vodSeasons = [{
     clips: [
       {id:'SmokySuccessfulPeanutPartyTime', title:"rozmowa o ARK'u", date:'2020-10-12', url:'https://clips.twitch.tv/SmokySuccessfulPeanutPartyTime?tt_content=url&tt_medium=clips_api'}
     ]
+  }, {
+    slug: 'rakietowa-liga', title: 'Rakietowa Liga 🚀⚽',
+    startedAt: '2020-10-15T18:15:00+02:00', endedAt: '2020-10-15T19:45:00+02:00',
+    durationMinutes: 90, category: 'games', archiveStatus: 'lost',
+    description: 'Stream z Rocket League. Nic się nie zachowało.',
+    contentScore: 0, url: '', actors: [], clips: []
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
