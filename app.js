@@ -882,6 +882,30 @@ function renderVodSeasonDetail(season) {
   statsPanel.inert = true;
   vodSeasonView.insertAdjacentHTML('beforeend', vodStreamListMarkup(season));
 }
+function vodDurationFromLabel(label) {
+  const match = String(label || '').match(/^(?:(\d+)h)?(?:(\d+)min)?$/);
+  return match ? (Number(match[1]) || 0) * 60 + (Number(match[2]) || 0) : null;
+}
+function animateVodStatistics(panel) {
+  if (!panel || !motionAllowed()) return;
+  panel.classList.remove('vod-stats-animating');
+  panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => {
+    bar.dataset.targetWidth ||= bar.style.width;
+    bar.style.width = '0%';
+  });
+  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
+    const target = Number(number.textContent.trim());
+    if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720);
+  });
+  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
+    const target = vodDurationFromLabel(number.textContent.trim());
+    if (target !== null) animateNumber(number, target, formatVodDurationZero, 820);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    panel.classList.add('vod-stats-animating');
+    panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
+  }));
+}
 vodSearch?.addEventListener('input', renderVodSeasons);
 vodSeasonView?.addEventListener('click', event => {
   const toggle = event.target.closest('[data-vod-stats-toggle]');
@@ -894,6 +918,7 @@ vodSeasonView?.addEventListener('click', event => {
   reveal.classList.toggle('is-open', !expanded);
   panel.setAttribute('aria-hidden', String(expanded));
   panel.inert = expanded;
+  if (!expanded) setTimeout(() => animateVodStatistics(panel), 40);
 });
 renderVodSeasons();
 
@@ -1389,6 +1414,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     else item.removeAttribute('aria-current');
   });
   document.title = activePage === 'home' ? 'BTKJ Archive' : selectedActor ? selectedActor.name + ' — Aktorzy — BTKJ Archive' : selectedVodStream ? selectedVodStream.title + ' — ' + selectedVodSeason.title + ' — VODy — BTKJ Archive' : selectedVodSeason ? selectedVodSeason.title + ' — VODy — BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
+  if (activePage === 'home') requestAnimationFrame(restartHomeAnimations);
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');
@@ -1519,10 +1545,52 @@ function animateNumber(element, target, format, duration = 900) {
   };
   requestAnimationFrame(step);
 }
+let homeAnimationRun = 0;
+function restartHomeAnimations() {
+  const run = ++homeAnimationRun;
+  const homeItems = document.querySelectorAll('#home-view>section');
+  homeItems.forEach(item => {
+    item.classList.add('reveal-item');
+    item.classList.remove('is-visible');
+  });
+  if (!motionAllowed()) {
+    homeItems.forEach(item => item.classList.add('is-visible'));
+  } else {
+    void document.querySelector('#home-view')?.offsetWidth;
+    homeItems.forEach((item, index) => setTimeout(() => {
+      if (run === homeAnimationRun) item.classList.add('is-visible');
+    }, 45 + index * 65));
+  }
+  document.querySelectorAll('#home-view .stats .stat-card>strong').forEach((number, index) => {
+    const target = Number(number.dataset.countTo) || 0;
+    number.setAttribute('aria-label', String(target));
+    setTimeout(() => {
+      if (run === homeAnimationRun) animateNumber(number, target, value => String(value), 1000);
+    }, motionAllowed() ? 180 + index * 70 : 0);
+  });
+  document.querySelectorAll('#home-view [data-balance]').forEach((card, index) => {
+    const balance = promiseBalances[card.dataset.balance];
+    const track = card.querySelector('.balance-track');
+    track?.classList.remove('balance-animated', 'balance-values-visible');
+    track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = '0%'; });
+    setTimeout(() => {
+      if (run !== homeAnimationRun) return;
+      animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
+      animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
+      animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
+      animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
+    }, motionAllowed() ? 220 + index * 120 : 0);
+    setTimeout(() => {
+      if (run !== homeAnimationRun) return;
+      track?.classList.add('balance-values-visible', 'balance-animated');
+      track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
+    }, motionAllowed() ? 420 + index * 140 : 0);
+  });
+}
 function startPageAnimations() {
   if (startPageAnimations.started) return;
   startPageAnimations.started = true;
-  const revealItems = document.querySelectorAll('#home-view>section, .actors-view>*, .archive-page>*, footer');
+  const revealItems = document.querySelectorAll('.actors-view>*, .archive-page>*, footer');
   revealItems.forEach(item => item.classList.add('reveal-item'));
   if (!motionAllowed() || !('IntersectionObserver' in window)) {
     revealItems.forEach(item => item.classList.add('is-visible'));
@@ -1536,26 +1604,7 @@ function startPageAnimations() {
     }, {threshold: .08, rootMargin: '0px 0px -35px'});
     revealItems.forEach(item => observer.observe(item));
   }
-
-  document.querySelectorAll('.stats .stat-card>strong').forEach((number, index) => {
-    const target = Number(number.dataset.countTo) || 0;
-    number.setAttribute('aria-label', String(target));
-    setTimeout(() => animateNumber(number, target, value => String(value), 1000), motionAllowed() ? 180 + index * 70 : 0);
-  });
-  document.querySelectorAll('[data-balance]').forEach((card, index) => {
-    const balance = promiseBalances[card.dataset.balance];
-    setTimeout(() => {
-      animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
-      animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
-      animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
-      animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
-    }, motionAllowed() ? 220 + index * 120 : 0);
-    setTimeout(() => {
-      const track = card.querySelector('.balance-track');
-      track.classList.add('balance-values-visible');
-      track.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = segment.dataset.width + '%'; });
-    }, motionAllowed() ? 420 + index * 140 : 0);
-  });
+  restartHomeAnimations();
 }
 if (siteLoader?.isConnected) document.addEventListener('btkj:loader-hidden', () => requestAnimationFrame(startPageAnimations), {once:true});
 else requestAnimationFrame(startPageAnimations);
