@@ -541,6 +541,20 @@ const vodSeasons = [{
     durationMinutes: 61, category: 'games', archiveStatus: 'lost',
     description: 'Wieczorny stream z League of Legends, TFT i Mount & Blade: Warband. Czat zasypuje transmisję spamem JSAPD.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
+  }, {
+    slug: 'czat-spam-jsapd-24-maja', title: 'czat spam JSAPD',
+    startedAt: '2020-05-24T22:20:00+02:00', endedAt: '2020-05-25T03:55:00+02:00',
+    durationMinutes: 335, category: 'games', archiveStatus: 'partial',
+    description: 'Nocny ciąg dalszy streamów pod niezmienionym tytułem „czat spam JSAPD”. Zachowane klipy pokazują luźne rozmowy z czatem: od brudnej prawdy i opinii o streamerkach po rozkminki o liczbie widzów oraz typowy nocny spam.',
+    contentScore: 1, contentNote: 'kilka ciekawych momentów', url: '', actors: [],
+    clips: [
+      {id:'OptimisticQuaintOtter4Head', title:'Brudna Prawda', date:'2020-05-24', url:'https://clips.twitch.tv/OptimisticQuaintOtter4Head?tt_content=url&tt_medium=clips_api'},
+      {id:'DeterminedKindTitanTinyFace', title:'Kraszuje Go', date:'2020-05-24', url:'https://clips.twitch.tv/DeterminedKindTitanTinyFace?tt_content=url&tt_medium=clips_api'},
+      {id:'SlipperyCoweringEndiveBuddhaBar', title:'Opinia o streamerkach', date:'2020-05-24', url:'https://clips.twitch.tv/SlipperyCoweringEndiveBuddhaBar?tt_content=url&tt_medium=clips_api'},
+      {id:'AntsyTriumphantTardigradeDoritosChip', title:'Rozkminka o liczbie widzów', date:'2020-05-24', url:'https://clips.twitch.tv/AntsyTriumphantTardigradeDoritosChip?tt_content=url&tt_medium=clips_api'},
+      {id:'SpinelessFineWolfOptimizePrime', title:'Crisu gej?', date:'2020-05-24', url:'https://clips.twitch.tv/SpinelessFineWolfOptimizePrime?tt_content=url&tt_medium=clips_api'},
+      {id:'SpunkyInnocentCheeseVoteNay', title:'Siema kutasik', date:'2020-05-24', url:'https://clips.twitch.tv/SpunkyInnocentCheeseVoteNay?tt_content=url&tt_medium=clips_api'}
+    ]
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
