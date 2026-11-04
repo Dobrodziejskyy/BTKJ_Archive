@@ -1453,8 +1453,10 @@ async function updatePageView(hash = location.hash, animate = true) {
     view.hidden = !current;
     if (current) {
       view.classList.remove('view-entering');
-      void view.offsetWidth;
-      view.classList.add('view-entering');
+      if (activePage !== 'home') {
+        void view.offsetWidth;
+        view.classList.add('view-entering');
+      }
     }
   });
   document.querySelectorAll('.archive-nav .topbar-item').forEach(item => {
@@ -1626,17 +1628,9 @@ function restartHomeAnimations() {
   homeView?.classList.remove('home-values-reset');
   const homeItems = document.querySelectorAll('#home-view>section');
   homeItems.forEach(item => {
-    item.classList.add('reveal-item');
-    item.classList.remove('is-visible');
+    item.classList.remove('reveal-item');
+    item.classList.add('is-visible');
   });
-  if (!motionAllowed()) {
-    homeItems.forEach(item => item.classList.add('is-visible'));
-  } else {
-    void document.querySelector('#home-view')?.offsetWidth;
-    homeItems.forEach((item, index) => setTimeout(() => {
-      if (run === homeAnimationRun) item.classList.add('is-visible');
-    }, 45 + index * 65));
-  }
   document.querySelectorAll('#home-view .stats .stat-card>strong').forEach((number, index) => {
     const target = Number(number.dataset.countTo) || 0;
     number.setAttribute('aria-label', String(target));
