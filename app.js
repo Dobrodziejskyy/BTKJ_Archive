@@ -1293,7 +1293,7 @@ function playPromiseRandomTone(final = false) {
     oscillator.type = final ? 'sine' : 'triangle';
     oscillator.frequency.setValueAtTime(final ? 660 : 230, now);
     if (final) oscillator.frequency.exponentialRampToValueAtTime(880, now + .14);
-    gain.gain.setValueAtTime(final ? .035 : .018, now);
+    gain.gain.setValueAtTime(final ? .09 : .045, now);
     gain.gain.exponentialRampToValueAtTime(.0001, now + (final ? .24 : .055));
     oscillator.connect(gain).connect(promiseRandomAudioContext.destination);
     oscillator.start(now);
