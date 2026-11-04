@@ -348,7 +348,7 @@ const actors = [{
   talentVideo: 'https://www.youtube-nocookie.com/embed/v08fNQY-97o?start=303&autoplay=1&rel=0',
   socials: [], linksLabel: 'Brak linków'
 }, {
-  slug: 'menel-sadownik', name: 'Menel Sadownik', role: 'epizodyczna', initials: 'MS',
+  slug: 'wujas', name: 'Wujas', role: 'epizodyczna', initials: 'W',
   description: 'Współpracownik na pracy sadownika.',
   detail: 'Pojawił się podczas streama „Wiesiu paleta na rp” jako współpracownik na pracy sadownika.',
   socials: [], linksLabel: 'Brak linków'
@@ -531,7 +531,7 @@ const vodSeasons = [{
     durationMinutes: 250, category: 'games',
     description: 'Pierwszy stream wiesia palety na GTA V RP. Jazda na sadowniku z jakimś menelem. Sneak peak odcinka na yt i opinia crisa o jego nowym filmie. Dodawanie do kontaktów Marcello ziomka od pożyczek i nauka ortografii.',
     contentScore: 1, contentNote: 'kilka ciekawych momentów', url: '',
-    actors: [{name:'Menel Sadownik', role:'Współpracownik na pracy sadownika.', slug:'menel-sadownik'}],
+    actors: [{name:'Wujas', role:'Współpracownik na pracy sadownika.', slug:'wujas'}],
     clips: [
       {id:'20200523-incredulous-boring-dad-osfrog-source', source:'archive', title:'Jazda na prace sadownika', date:'2020-05-23', url:'https://archive.org/details/20200523-incredulous-boring-dad-osfrog-source'},
       {id:'DiligentConcernedBasenjiKlappa', title:'Jazda na meline.', date:'2020-05-23', url:'https://clips.twitch.tv/DiligentConcernedBasenjiKlappa?tt_content=url&tt_medium=clips_api'},
