@@ -820,6 +820,11 @@ vodSeasonDots?.addEventListener('click', event => {
   if (dot) updateVodSeasonCarousel(Number(dot.dataset.vodSeasonSlide));
 });
 window.addEventListener('resize', () => updateVodSeasonCarousel(vodSeasonCarouselIndex, false));
+if ('ResizeObserver' in window && vodSeasonViewport) {
+  new ResizeObserver(() => {
+    if (vodSeasonViewport.clientWidth) updateVodSeasonCarousel(vodSeasonCarouselIndex, false);
+  }).observe(vodSeasonViewport);
+}
 function vodStreamSummary(stream) {
   if (!stream) return 'Brak danych';
   const title = stream.title ? vodEscape(stream.title) : 'Stream';
@@ -1599,6 +1604,9 @@ async function updatePageView(hash = location.hash, animate = true) {
       }
     }
   });
+  if (activePage === 'vody') {
+    requestAnimationFrame(() => requestAnimationFrame(() => updateVodSeasonCarousel(vodSeasonCarouselIndex, false)));
+  }
   document.querySelectorAll('.archive-nav .topbar-item').forEach(item => {
     const current = activePage === 'home' ? item.getAttribute('href') === '#' : activePage === 'aktor-szczegoly' ? item.getAttribute('href') === '#aktorzy' : ['vod-sezon','vod-stream'].includes(activePage) ? item.getAttribute('href') === '#vody' : item.getAttribute('href') === '#' + activePage;
     item.classList.toggle('is-current', current);
