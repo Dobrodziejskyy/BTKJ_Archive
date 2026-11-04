@@ -524,7 +524,7 @@ renderMediaCatalog();
 // Wszystkie wartości w panelu sezonu są liczone z tych rekordów.
 const vodSeasons = [{
   slug: 'prequel', number: 0, title: 'Prequel', platform: 'Twitch',
-  description: 'Pierwszy sezon archiwum', startDate: '2020-05-23', endDate: '2020-10-15',
+  description: 'Pierwsze streamy na twitch', startDate: '2020-05-23', endDate: '2020-10-15',
   knownStreamCount: 8, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
@@ -605,7 +605,7 @@ const vodSeasons = [{
   }]
 }, {
   slug: 'sezon-1', number: 1, title: 'Sezon 1', platform: 'Twitch',
-  description: 'Pierwszy właściwy sezon archiwum', startDate: '2021-03-25', endDate: '2021-05-24',
+  description: 'GOAT streamy. Najlepszy z sezonów', startDate: '2021-03-25', endDate: '2021-05-24',
   knownStreamCount: 0, streams: []
 }];
 const vodSearch = document.querySelector('#vod-search');
