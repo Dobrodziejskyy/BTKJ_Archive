@@ -603,10 +603,19 @@ const vodSeasons = [{
     description: 'Stream z Rocket League. Nic się nie zachowało.',
     contentScore: 0, url: '', actors: [], clips: []
   }]
+}, {
+  slug: 'sezon-1', number: 1, title: 'Sezon 1', platform: 'Twitch',
+  description: 'Pierwszy właściwy sezon archiwum', startDate: '2021-03-25', endDate: '2021-05-24',
+  knownStreamCount: 0, streams: []
 }];
 const vodSearch = document.querySelector('#vod-search');
 const vodSeasonList = document.querySelector('#vod-season-list');
 const vodSeasonCount = document.querySelector('#vod-season-count');
+const vodSeasonViewport = document.querySelector('.vod-season-viewport');
+const vodSeasonPrev = document.querySelector('#vod-season-prev');
+const vodSeasonNext = document.querySelector('#vod-season-next');
+const vodSeasonPosition = document.querySelector('#vod-season-position');
+const vodSeasonDots = document.querySelector('#vod-season-dots');
 const vodEmpty = document.querySelector('#vod-empty');
 const vodSeasonView = document.querySelector('#vod-season-view');
 const vodStreamView = document.querySelector('#vod-stream-view');
@@ -745,6 +754,27 @@ function vodSeasonRange(season) {
   const dates = [season.startDate, season.endDate, ...(season.streams || []).map(vodDateKey)].filter(value => parseVodDay(value) !== null).sort();
   return {start:dates[0] || '', end:dates.at(-1) || dates[0] || ''};
 }
+let vodSeasonCarouselIndex = 0;
+function updateVodSeasonCarousel(index = vodSeasonCarouselIndex, animate = true) {
+  const cards = [...(vodSeasonList?.querySelectorAll('.vod-season-card') || [])];
+  const total = cards.length;
+  vodSeasonCarouselIndex = Math.max(0, Math.min(Number(index) || 0, Math.max(0, total - 1)));
+  cards.forEach((card, cardIndex) => card.classList.toggle('is-active', cardIndex === vodSeasonCarouselIndex));
+  if (vodSeasonList && vodSeasonViewport && total) {
+    const card = cards[vodSeasonCarouselIndex];
+    const offset = (vodSeasonViewport.clientWidth - card.offsetWidth) / 2 - card.offsetLeft;
+    vodSeasonList.style.transition = animate ? '' : 'none';
+    vodSeasonList.style.transform = `translate3d(${offset}px,0,0)`;
+    if (!animate) requestAnimationFrame(() => { vodSeasonList.style.transition = ''; });
+  } else if (vodSeasonList) vodSeasonList.style.transform = '';
+  if (vodSeasonPosition) vodSeasonPosition.textContent = total ? `${vodSeasonCarouselIndex + 1} / ${total}` : '0 / 0';
+  if (vodSeasonPrev) vodSeasonPrev.disabled = vodSeasonCarouselIndex <= 0;
+  if (vodSeasonNext) vodSeasonNext.disabled = vodSeasonCarouselIndex >= total - 1;
+  [...(vodSeasonDots?.children || [])].forEach((dot, dotIndex) => {
+    dot.classList.toggle('active', dotIndex === vodSeasonCarouselIndex);
+    dot.setAttribute('aria-current', dotIndex === vodSeasonCarouselIndex ? 'true' : 'false');
+  });
+}
 function renderVodSeasons() {
   if (!vodSeasonList) return;
   const query = (vodSearch?.value || '').trim().toLocaleLowerCase('pl');
@@ -754,14 +784,25 @@ function renderVodSeasons() {
     const searchText = [season.title, season.platform, season.description, vodStreamCountLabel(stats.total), formatVodDate(range.start), formatVodDate(range.end), ...(season.streams || []).flatMap(stream => [stream.title, stream.category, stream.description, stream.contentNote, vodDateKey(stream), vodTimeRange(stream), ...(stream.actors || []).flatMap(actor => [actor.name, actor.role]), ...(stream.clips || []).flatMap(clip => [clip.title, clip.date])])].join(' ').toLocaleLowerCase('pl');
     return !query || searchText.includes(query);
   });
-  vodSeasonList.innerHTML = visible.map(season => {
+  vodSeasonList.innerHTML = visible.map((season, index) => {
     const stats = calculateVodStats(season);
     const range = vodSeasonRange(season);
-    return `<a class="vod-season-card" href="#vody/${encodeURIComponent(season.slug)}" aria-label="Otwórz sezon ${vodEscape(season.title)}"><div class="vod-season-thumbnail" role="img" aria-label="Tymczasowa miniatura sezonu ${vodEscape(season.title)}"><span>${vodEscape(season.title)}</span></div><div class="vod-season-content"><div class="vod-season-title"><div><small>SEZON ${season.number}</small><h3>${vodEscape(season.title)}</h3></div><span aria-hidden="true">›</span></div><p class="vod-season-date"><time datetime="${range.start}">${formatVodDate(range.start, true)}</time><span>—</span><time datetime="${range.end}">${formatVodDate(range.end, true)}</time></p><div class="vod-season-meta"><strong>${vodStreamCountLabel(stats.total)}</strong><span>${vodEscape(season.description)}</span></div></div></a>`;
+    const latest = season === vodSeasons.at(-1);
+    return `<a class="vod-season-card" href="#vody/${encodeURIComponent(season.slug)}" aria-label="Otwórz sezon ${vodEscape(season.title)}"><div class="vod-season-thumbnail" role="img" aria-label="Tymczasowa miniatura sezonu ${vodEscape(season.title)}"><span class="vod-season-platform">${vodEscape(season.platform)}</span>${latest ? '<span class="vod-season-latest">● Najnowszy sezon</span>' : ''}<strong>${vodEscape(season.title)}</strong></div><div class="vod-season-content"><div class="vod-season-title"><div><small>SEZON ${season.number}</small><h3>${vodEscape(season.title)}</h3></div><span aria-hidden="true">›</span></div><p class="vod-season-date"><time datetime="${range.start}">${formatVodDate(range.start, true)}</time><span>—</span><time datetime="${range.end}">${formatVodDate(range.end, true)}</time></p><div class="vod-season-meta"><strong>${vodStreamCountLabel(stats.total)}</strong><span>${vodEscape(season.description)}</span></div></div></a>`;
   }).join('');
+  if (vodSeasonDots) vodSeasonDots.innerHTML = visible.map((season, index) => `<button type="button" data-vod-season-slide="${index}" aria-label="Pokaż ${vodEscape(season.title)}"></button>`).join('');
   if (vodSeasonCount) vodSeasonCount.textContent = vodSeasonCountLabel(visible.length);
   if (vodEmpty) vodEmpty.hidden = visible.length > 0;
+  vodSeasonCarouselIndex = Math.min(vodSeasonCarouselIndex, Math.max(0, visible.length - 1));
+  requestAnimationFrame(() => updateVodSeasonCarousel(vodSeasonCarouselIndex, false));
 }
+vodSeasonPrev?.addEventListener('click', () => updateVodSeasonCarousel(vodSeasonCarouselIndex - 1));
+vodSeasonNext?.addEventListener('click', () => updateVodSeasonCarousel(vodSeasonCarouselIndex + 1));
+vodSeasonDots?.addEventListener('click', event => {
+  const dot = event.target.closest('[data-vod-season-slide]');
+  if (dot) updateVodSeasonCarousel(Number(dot.dataset.vodSeasonSlide));
+});
+window.addEventListener('resize', () => updateVodSeasonCarousel(vodSeasonCarouselIndex, false));
 function vodStreamSummary(stream) {
   if (!stream) return 'Brak danych';
   const title = stream.title ? vodEscape(stream.title) : 'Stream';
