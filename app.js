@@ -912,21 +912,24 @@ function resetVodStatistics(panel) {
 function animateVodStatistics(panel) {
   if (!panel || !motionAllowed()) return;
   resetVodStatistics(panel);
-  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
-    const target = Number(number.dataset.targetValue);
-    if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720);
-  });
-  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
-    const targetLabel = number.dataset.targetLabel || '';
-    const duration = vodDurationFromLabel(targetLabel);
-    const days = vodDayValueFromLabel(targetLabel);
-    if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820);
-    else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760);
-  });
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    panel.classList.add('vod-stats-animating');
-    panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
-  }));
+  setTimeout(() => {
+    if (!panel.isConnected || panel.getAttribute('aria-hidden') === 'true') return;
+    panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
+      const target = Number(number.dataset.targetValue);
+      if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720);
+    });
+    panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
+      const targetLabel = number.dataset.targetLabel || '';
+      const duration = vodDurationFromLabel(targetLabel);
+      const days = vodDayValueFromLabel(targetLabel);
+      if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820);
+      else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760);
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      panel.classList.add('vod-stats-animating');
+      panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
+    }));
+  }, 150);
 }
 vodSearch?.addEventListener('input', renderVodSeasons);
 vodSeasonView?.addEventListener('click', event => {
