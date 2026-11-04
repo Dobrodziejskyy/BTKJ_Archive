@@ -559,7 +559,7 @@ const vodSeasons = [{
   }, {
     slug: 'rp-wesley-craft-fastlife-rp', title: 'RP ⭐Wesley Craft ⭐ FastLife RP',
     startedAt: '2020-05-27T16:52:00+02:00', endedAt: '2020-05-27T23:45:00+02:00',
-    durationMinutes: 413, category: 'games',
+    durationMinutes: 413, category: 'games', archiveStatus: 'lost',
     description: 'Nowy serwer GTA V RP, sprawdzanie strony Towarzysza Twitch i ubieranie postaci. W trakcie pojawiają się też chwile z Forza Horizon 4.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
   }]
