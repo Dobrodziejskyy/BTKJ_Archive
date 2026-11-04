@@ -177,6 +177,9 @@ const stars = Array.from({length: 180}, () => ({}));
 let starWidth = 0;
 let starHeight = 0;
 let lastStarFrame = performance.now();
+let starBoostStartedAt = -Infinity;
+const starBoostHold = 180;
+const starBoostDuration = 680;
 function resetStar(star, randomDepth = true) {
   star.x = (Math.random() - .5) * 2.2;
   star.y = (Math.random() - .5) * 2.2;
@@ -193,13 +196,25 @@ function resizeStarfield() {
   starCanvas.style.height = starHeight + 'px';
   starContext.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
+function triggerStarBoost() {
+  if (!motionAllowed()) return;
+  starBoostStartedAt = performance.now();
+}
+function starfieldSpeedMultiplier(now) {
+  if (!motionAllowed()) return 0;
+  const elapsed = now - starBoostStartedAt;
+  if (elapsed <= 0 || elapsed >= starBoostDuration) return 1;
+  if (elapsed <= starBoostHold) return 6;
+  const progress = (elapsed - starBoostHold) / (starBoostDuration - starBoostHold);
+  return 1 + 5 * (1 - progress) ** 2;
+}
 function drawStarfield(now) {
   const elapsed = Math.min(34, now - lastStarFrame);
   lastStarFrame = now;
   starContext.clearRect(0, 0, starWidth, starHeight);
   const centerX = starWidth / 2;
   const centerY = starHeight / 2;
-  const depthStep = reducedMotion.matches ? 0 : .00022 * elapsed;
+  const depthStep = .00022 * elapsed * starfieldSpeedMultiplier(now);
   for (const star of stars) {
     const previousZ = star.z;
     star.z -= depthStep;
@@ -1275,6 +1290,7 @@ async function updatePageView(hash = location.hash, animate = true) {
   const transition = changingPage && animate && motionAllowed();
   const transitionId = ++pageTransitionId;
   if (transition) {
+    triggerStarBoost();
     document.body.classList.remove('page-entering');
     document.body.classList.add('page-leaving');
     await new Promise(resolve => setTimeout(resolve, 210));
