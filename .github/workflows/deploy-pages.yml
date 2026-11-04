@@ -25,6 +25,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
+      - name: Version static assets
+        env:
+          ASSET_VERSION: ${{ github.sha }}
+        run: sed -i "s/__ASSET_VERSION__/${ASSET_VERSION}/g" index.html
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
