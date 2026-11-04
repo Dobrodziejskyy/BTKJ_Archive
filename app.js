@@ -821,6 +821,21 @@ function vodContentMeterMarkup(stream, className = '', focusable = false) {
   const flames = Array.from({length:4}, (_, index) => `<svg${index < score ? ' class="is-active"' : ''} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4.97 0 9-3.58 9-8 0-1.69-.65-3.38-2-4.5.5 2.5-1 3.5-1 3.5.5-5.5-3-9.5-8-11 1 4.5-2 7-2 7 .5-1.5-1-2.5-1-2.5C5.17 8.15 3 10.88 3 14c0 4.42 4.03 8 9 8Z"/></svg>`).join('');
   return `<span class="vod-content-meter${className ? ` ${className}` : ''}" role="img" aria-label="${vodEscape(label)}" data-tooltip="${vodEscape(label)}"${focusable ? ' tabindex="0"' : ''}>${flames}</span>`;
 }
+function vodContentStatsMarkup(stats) {
+  const scores = stats.streams.map(vodContentScore);
+  const total = scores.length;
+  const average = total ? scores.reduce((sum, score) => sum + score, 0) / total : 0;
+  const averageLabel = average.toFixed(1).replace('.', ',');
+  const rows = [4, 3, 2, 1, 0].map(score => {
+    const count = scores.filter(value => value === score).length;
+    if (!count) return '';
+    const percent = total ? count / total * 100 : 0;
+    const percentLabel = Number(percent.toFixed(1)).toLocaleString('pl-PL', {maximumFractionDigits:1});
+    const flames = Array.from({length:4}, (_, index) => `<svg${index < score ? ' class="is-active"' : ''} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4.97 0 9-3.58 9-8 0-1.69-.65-3.38-2-4.5.5 2.5-1 3.5-1 3.5.5-5.5-3-9.5-8-11 1 4.5-2 7-2 7 .5-1.5-1-2.5-1-2.5C5.17 8.15 3 10.88 3 14c0 4.42 4.03 8 9 8Z"/></svg>`).join('');
+    return `<div class="vod-content-stat-row" aria-label="Kontentomierz ${score} na 4: ${count} streamów, ${percentLabel}%"><span class="vod-content-stat-flames">${flames}</span><span class="vod-content-stat-track" aria-hidden="true"><i style="width:${percent}%"></i></span><b>${count} (${percentLabel}%)</b></div>`;
+  }).join('');
+  return `<section class="vod-stat-section vod-content-stats"><div class="vod-content-stats-heading"><h2>KONTENTOMIERZ <span title="Rozkład ocen kontentomierza w sezonie" aria-label="Rozkład ocen kontentomierza w sezonie">i</span></h2><p>Średnio <strong><span class="vod-content-stat-average">${averageLabel}</span>/4</strong> <i aria-hidden="true">🔥</i></p></div><div class="vod-content-stat-rows">${rows}</div></section>`;
+}
 function vodArchiveLabel(stream) {
   const status = vodArchiveStatus(stream);
   return status === 'trace' ? 'ŚLADOWO ZACHOWANY' : status === 'partial' ? 'CZĘŚCIOWE LOST MEDIA' : status === 'lost' ? 'LOST MEDIA' : status === 'available' ? 'ZACHOWANY' : 'BRAK DANYCH';
@@ -912,7 +927,7 @@ function renderVodSeasonDetail(season) {
   const partialWidth = stats.total ? stats.partial.length / stats.total * 100 : 0;
   const lostWidth = stats.total ? stats.lost.length / stats.total * 100 : 0;
   const traceLabel = stats.trace.length === 1 ? '1 śladowo zachowany' : `${stats.trace.length} śladowo zachowanych`;
-  const archiveLabels = `<div class="vod-archive-labels"><span class="available">${stats.available.length} zachowanych</span><span class="partial">${stats.partial.length} częściowo zachowanych</span><span class="trace">${traceLabel}</span><span class="lost">${stats.lost.length} lost media</span><span class="unknown">${stats.unknownArchive} bez statusu</span></div>`;
+  const archiveLabels = `<div class="vod-archive-labels"><span class="available">${stats.available.length} zachowanych</span><span class="partial">${stats.partial.length} częściowo zachowanych</span><span class="trace">${traceLabel}</span><span class="lost">${stats.lost.length} lost media</span>${stats.unknownArchive ? `<span class="unknown">${stats.unknownArchive} bez statusu</span>` : ''}</div>`;
   const categoryBreakdown = `<div class="vod-category-breakdown" aria-label="Udział muzyki i gier w streamach">${vodCategoryStatMarkup('Muzyka', stats.music, stats.musicDuration, stats.total, stats.totalDuration, 'music')}${vodCategoryStatMarkup('Gierki', stats.games, stats.gamesDuration, stats.total, stats.totalDuration, 'games')}</div>`;
   const monthRows = stats.months.length ? stats.months.map(month => {
     const label = new Intl.DateTimeFormat('pl-PL', {month:'long', year:'numeric', timeZone:'UTC'}).format(parseVodDay(`${month.key}-01`));
@@ -922,7 +937,7 @@ function renderVodSeasonDetail(season) {
   const durationDetail = stats.durationStreams.length ? `Na podstawie ${stats.durationStreams.length} z ${stats.total}` : 'Brak danych o czasie';
   const longestBreakDetail = stats.longestBreak ? `${formatVodTimestamp(stats.longestBreak.from)} → ${formatVodTimestamp(stats.longestBreak.to)}` : 'Brak danych o datach';
   const typicalHours = stats.typicalStart === null ? '—' : `${formatVodClock(stats.typicalStart)}${stats.typicalEnd === null ? '' : ` → ~${formatVodClock(stats.typicalEnd)}`}`;
-  vodSeasonView.innerHTML = `<div class="vod-season-detail-header"><a class="vod-season-back" href="#vody" aria-label="Wróć do sezonów">←</a><div class="vod-season-identity"><small>PLATFORMA: ${vodEscape(season.platform).toLocaleUpperCase('pl')}</small><h1 id="vod-season-title">${vodEscape(season.title)}</h1><p>${vodStreamCountLabel(stats.total)} <span>·</span> ${formatVodDate(range.start)} — ${formatVodDate(range.end)}</p></div><aside><span>O sezonie</span><p>${vodEscape(season.description)}.</p></aside></div><div class="vod-season-detail-actions"><button class="vod-stats-toggle active" type="button" data-vod-stats-toggle aria-expanded="true" aria-controls="vod-season-stats"><span aria-hidden="true">${vodStatIcons.chart}</span> Statystyki</button></div><section class="panel vod-stats-panel" id="vod-season-stats" aria-labelledby="vod-stats-title"><div class="vod-stats-overview"><div><small id="vod-stats-title">STREAMY</small><p><strong>${stats.total}</strong> ${vodStreamNoun(stats.total)} <b class="vod-count-music">${stats.music}</b> muzyka <b class="vod-count-games">${stats.games}</b> gierki</p>${categoryBreakdown}</div><span>Dane <strong>${stats.detailed}/${stats.total}</strong></span></div><div class="vod-archive-summary"><div class="vod-archive-heading"><span>DOSTĘPNOŚĆ ARCHIWUM</span></div><div class="vod-archive-track" role="img" aria-label="${stats.available.length} zachowanych, ${stats.partial.length} częściowo zachowanych, ${stats.trace.length} śladowo zachowanych, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu"><i class="available" style="width:${availableWidth}%"></i><i class="partial" style="width:${partialWidth}%"></i><i class="trace" style="width:${traceWidth}%"></i><i class="lost" style="width:${lostWidth}%"></i></div>${archiveLabels}</div>${stats.detailed < stats.total ? `<p class="vod-stats-notice"><span aria-hidden="true">i</span> Statystyki uzupełnią się automatycznie po dodaniu dat, godzin, kategorii i czasu streamów.</p>` : ''}<section class="vod-stat-section"><h2>CZAS STREAMÓW</h2><div class="vod-stat-grid">${vodStatTile('total', formatVodDuration(stats.totalDuration), 'ŁĄCZNIE NA STREAMIE', durationDetail)}${vodStatTile('average', formatVodDuration(stats.averageDuration), 'ŚREDNI CZAS STREAMA', durationDetail)}${vodStatTile('longest', formatVodDuration(stats.longest?.durationMinutes), 'NAJDŁUŻSZY STREAM', vodStreamSummary(stats.longest))}${vodStatTile('shortest', formatVodDuration(stats.shortest?.durationMinutes), 'NAJKRÓTSZY STREAM', vodStreamSummary(stats.shortest))}</div></section><section class="vod-stat-section"><h2>RYTM</h2><div class="vod-stat-grid">${vodStatTile('frequency', formatVodDays(stats.averageFrequency, 'co '), 'CZĘSTOTLIWOŚĆ', stats.dated.length > 1 ? `${formatVodDate(vodDateKey(stats.dated[0].stream))} → ${formatVodDate(vodDateKey(stats.dated.at(-1).stream))}` : 'Brak danych o datach')}${vodStatTile('gap', formatVodDays(stats.longestBreak?.days), 'NAJDŁUŻSZA PRZERWA', longestBreakDetail)}${vodStatTile('daily', formatVodDays(stats.longestDaily), 'NAJDŁUŻSZE DAILY', stats.longestDaily ? 'Kolejne dni ze streamem' : 'Brak danych o datach')}${vodStatTile('hours', typicalHours, 'TYPOWE GODZINY', stats.typicalStart === null ? 'Brak danych o godzinach' : 'Średnia pora rozpoczęcia i zakończenia')}</div></section><section class="vod-stat-section vod-months"><h2>STREAMY WG MIESIĘCY</h2>${monthRows}</section></section>`;
+  vodSeasonView.innerHTML = `<div class="vod-season-detail-header"><a class="vod-season-back" href="#vody" aria-label="Wróć do sezonów">←</a><div class="vod-season-identity"><small>PLATFORMA: ${vodEscape(season.platform).toLocaleUpperCase('pl')}</small><h1 id="vod-season-title">${vodEscape(season.title)}</h1><p>${vodStreamCountLabel(stats.total)} <span>·</span> ${formatVodDate(range.start)} — ${formatVodDate(range.end)}</p></div><aside><span>O sezonie</span><p>${vodEscape(season.description)}.</p></aside></div><div class="vod-season-detail-actions"><button class="vod-stats-toggle active" type="button" data-vod-stats-toggle aria-expanded="true" aria-controls="vod-season-stats"><span aria-hidden="true">${vodStatIcons.chart}</span> Statystyki</button></div><section class="panel vod-stats-panel" id="vod-season-stats" aria-labelledby="vod-stats-title"><div class="vod-stats-overview"><div><small id="vod-stats-title">STREAMY</small><p><strong>${stats.total}</strong> ${vodStreamNoun(stats.total)} <b class="vod-count-music">${stats.music}</b> muzyka <b class="vod-count-games">${stats.games}</b> gierki</p>${categoryBreakdown}</div><span>Dane <strong>${stats.detailed}/${stats.total}</strong></span></div><div class="vod-archive-summary"><div class="vod-archive-heading"><span>DOSTĘPNOŚĆ ARCHIWUM</span></div><div class="vod-archive-track" role="img" aria-label="${stats.available.length} zachowanych, ${stats.partial.length} częściowo zachowanych, ${stats.trace.length} śladowo zachowanych, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu"><i class="available" style="width:${availableWidth}%"></i><i class="partial" style="width:${partialWidth}%"></i><i class="trace" style="width:${traceWidth}%"></i><i class="lost" style="width:${lostWidth}%"></i></div>${archiveLabels}</div>${stats.detailed < stats.total ? `<p class="vod-stats-notice"><span aria-hidden="true">i</span> Statystyki uzupełnią się automatycznie po dodaniu dat, godzin, kategorii i czasu streamów.</p>` : ''}<section class="vod-stat-section"><h2>CZAS STREAMÓW</h2><div class="vod-stat-grid">${vodStatTile('total', formatVodDuration(stats.totalDuration), 'ŁĄCZNIE NA STREAMIE', durationDetail)}${vodStatTile('average', formatVodDuration(stats.averageDuration), 'ŚREDNI CZAS STREAMA', durationDetail)}${vodStatTile('longest', formatVodDuration(stats.longest?.durationMinutes), 'NAJDŁUŻSZY STREAM', vodStreamSummary(stats.longest))}${vodStatTile('shortest', formatVodDuration(stats.shortest?.durationMinutes), 'NAJKRÓTSZY STREAM', vodStreamSummary(stats.shortest))}</div></section><section class="vod-stat-section"><h2>RYTM</h2><div class="vod-stat-grid">${vodStatTile('frequency', formatVodDays(stats.averageFrequency, 'co '), 'CZĘSTOTLIWOŚĆ', stats.dated.length > 1 ? `${formatVodDate(vodDateKey(stats.dated[0].stream))} → ${formatVodDate(vodDateKey(stats.dated.at(-1).stream))}` : 'Brak danych o datach')}${vodStatTile('gap', formatVodDays(stats.longestBreak?.days), 'NAJDŁUŻSZA PRZERWA', longestBreakDetail)}${vodStatTile('daily', formatVodDays(stats.longestDaily), 'NAJDŁUŻSZE DAILY', stats.longestDaily ? 'Kolejne dni ze streamem' : 'Brak danych o datach')}${vodStatTile('hours', typicalHours, 'TYPOWE GODZINY', stats.typicalStart === null ? 'Brak danych o godzinach' : 'Średnia pora rozpoczęcia i zakończenia')}</div></section><section class="vod-stat-section vod-months"><h2>STREAMY WG MIESIĘCY</h2>${monthRows}</section>${vodContentStatsMarkup(stats)}</section>`;
   const statsPanel = vodSeasonView.querySelector('#vod-season-stats');
   const statsToggle = vodSeasonView.querySelector('[data-vod-stats-toggle]');
   const statsReveal = document.createElement('div');
@@ -948,7 +963,9 @@ const vodAnimatedValueSelector = [
   '.vod-archive-labels span',
   '.vod-stat-tile>strong',
   '.vod-month-row b',
-  '.vod-month-row small'
+  '.vod-month-row small',
+  '.vod-content-stat-average',
+  '.vod-content-stat-row>b'
 ].join(',');
 function vodZeroNumberToken(token) {
   return token.replace(/\d/g, '0');
@@ -984,7 +1001,7 @@ function resetVodStatistics(panel) {
   panel.dataset.vodAnimationRun = String((Number(panel.dataset.vodAnimationRun) || 0) + 1);
   panel.classList.remove('vod-stats-animating');
   panel.classList.add('vod-stats-reset');
-  panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => {
+  panel.querySelectorAll('.vod-archive-track i, .vod-month-track i, .vod-content-stat-track i').forEach(bar => {
     bar.dataset.targetWidth ||= bar.style.width;
     bar.style.width = '0%';
   });
@@ -1006,7 +1023,7 @@ function animateVodStatistics(panel) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     if (!isCurrent()) return;
     panel.classList.add('vod-stats-animating');
-    panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
+    panel.querySelectorAll('.vod-archive-track i, .vod-month-track i, .vod-content-stat-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
   }));
 }
 vodSearch?.addEventListener('input', renderVodSeasons);
