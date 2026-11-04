@@ -349,8 +349,8 @@ const actors = [{
   socials: [], linksLabel: 'Brak linków'
 }, {
   slug: 'wujas', name: 'Wujas', role: 'epizodyczna', initials: 'W',
-  description: 'Współpracownik na pracy sadownika.',
-  detail: 'Pojawił się podczas streama „Wiesiu paleta na rp” jako współpracownik na pracy sadownika.',
+  description: 'Grał z Crisem podczas GTA RP w 2020 roku.',
+  detail: 'Grał z Crisem podczas GTA RP w 2020 roku.',
   socials: [], linksLabel: 'Brak linków'
 }];
 const actorDetailView = document.querySelector('#actor-detail-view');
