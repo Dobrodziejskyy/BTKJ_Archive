@@ -574,7 +574,7 @@ const vodSeasons = [{
     startedAt: '2020-05-29T21:40:00+02:00', endedAt: '2020-05-29T22:55:00+02:00',
     durationMinutes: 75, category: 'games', archiveStatus: 'lost',
     description: 'Teamfight Tactics i chwila League of Legends.',
-    contentScore: 0, url: '', actors: [], clips: []
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
