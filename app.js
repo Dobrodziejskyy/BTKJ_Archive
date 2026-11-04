@@ -1429,6 +1429,7 @@ async function updatePageView(hash = location.hash, animate = true) {
   const selectedVodStream = selectedVodSeason && vodStreamSlug ? selectedVodSeason.streams.find(stream => stream.slug === vodStreamSlug) : null;
   const activePage = selectedActor ? 'aktor-szczegoly' : selectedVodStream ? 'vod-stream' : selectedVodSeason ? 'vod-sezon' : pages[requested] ? requested : actorSlug ? 'aktorzy' : vodSeasonSlug ? 'vody' : 'home';
   const previousPage = currentPageKey;
+  if (previousPage === 'home' && activePage !== 'home') resetHomeAnimations();
   if (previousPage === 'vod-sezon' && activePage !== 'vod-sezon') resetVodStatistics(vodSeasonView.querySelector('#vod-season-stats'));
   if (previousPage === 'aktorzy' && activePage === 'aktor-szczegoly') actorListScrollY = window.scrollY;
   const returningToActorList = previousPage === 'aktor-szczegoly' && activePage === 'aktorzy';
@@ -1596,8 +1597,33 @@ function animateNumber(element, target, format, duration = 900, shouldContinue =
   requestAnimationFrame(step);
 }
 let homeAnimationRun = 0;
-function restartHomeAnimations() {
+function resetHomeAnimations() {
   const run = ++homeAnimationRun;
+  const homeView = document.querySelector('#home-view');
+  homeView?.classList.add('home-values-reset');
+  homeView?.querySelectorAll('.stats .stat-card>strong').forEach(number => {
+    number.textContent = '0';
+  });
+  homeView?.querySelectorAll('[data-balance]').forEach(card => {
+    const percent = card.querySelector('.balance-percent');
+    const completed = card.querySelector('.balance-completed');
+    const uncompleted = card.querySelector('.balance-uncompleted');
+    const total = card.querySelector('.balance-total');
+    if (percent) percent.textContent = '0%';
+    if (completed) completed.textContent = '✓ 0 Wykonane';
+    if (uncompleted) uncompleted.textContent = '0 Niewykonane ×';
+    if (total) total.textContent = '0 łącznie';
+    const track = card.querySelector('.balance-track');
+    track?.classList.remove('balance-animated', 'balance-values-visible');
+    track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = '0%'; });
+  });
+  return run;
+}
+function restartHomeAnimations() {
+  const run = resetHomeAnimations();
+  const homeView = document.querySelector('#home-view');
+  void homeView?.offsetWidth;
+  homeView?.classList.remove('home-values-reset');
   const homeItems = document.querySelectorAll('#home-view>section');
   homeItems.forEach(item => {
     item.classList.add('reveal-item');
@@ -1615,7 +1641,7 @@ function restartHomeAnimations() {
     const target = Number(number.dataset.countTo) || 0;
     number.setAttribute('aria-label', String(target));
     setTimeout(() => {
-      if (run === homeAnimationRun) animateNumber(number, target, value => String(value), 1000);
+      if (run === homeAnimationRun) animateNumber(number, target, value => String(value), 1000, () => run === homeAnimationRun && currentPageKey === 'home');
     }, motionAllowed() ? 180 + index * 70 : 0);
   });
   document.querySelectorAll('#home-view [data-balance]').forEach((card, index) => {
@@ -1625,10 +1651,11 @@ function restartHomeAnimations() {
     track?.querySelectorAll(':scope>span').forEach(segment => { segment.style.width = '0%'; });
     setTimeout(() => {
       if (run !== homeAnimationRun) return;
-      animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%');
-      animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane');
-      animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×');
-      animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie');
+      const isCurrent = () => run === homeAnimationRun && currentPageKey === 'home';
+      animateNumber(card.querySelector('.balance-percent'), balance.percent ?? 0, value => balance.percent === null ? '—' : value + '%', 900, isCurrent);
+      animateNumber(card.querySelector('.balance-completed'), balance.done, value => '✓ ' + value + ' Wykonane', 900, isCurrent);
+      animateNumber(card.querySelector('.balance-uncompleted'), balance.failed, value => value + ' Niewykonane ×', 900, isCurrent);
+      animateNumber(card.querySelector('.balance-total'), balance.total, value => value + ' łącznie', 900, isCurrent);
     }, motionAllowed() ? 220 + index * 120 : 0);
     setTimeout(() => {
       if (run !== homeAnimationRun) return;
