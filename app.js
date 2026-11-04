@@ -783,7 +783,7 @@ function renderVodSeasons() {
     const range = vodSeasonRange(season);
     const searchText = [season.title, season.platform, season.description, vodStreamCountLabel(stats.total), formatVodDate(range.start), formatVodDate(range.end), ...(season.streams || []).flatMap(stream => [stream.title, stream.category, stream.description, stream.contentNote, vodDateKey(stream), vodTimeRange(stream), ...(stream.actors || []).flatMap(actor => [actor.name, actor.role]), ...(stream.clips || []).flatMap(clip => [clip.title, clip.date])])].join(' ').toLocaleLowerCase('pl');
     return !query || searchText.includes(query);
-  });
+  }).sort((a, b) => vodSeasonRange(b).end.localeCompare(vodSeasonRange(a).end));
   vodSeasonList.innerHTML = visible.map((season, index) => {
     const stats = calculateVodStats(season);
     const range = vodSeasonRange(season);
