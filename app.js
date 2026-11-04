@@ -18,6 +18,7 @@ if (siteLoaderTip) siteLoaderTip.textContent = siteLoaderTips[siteLoaderTipIndex
 function dismissSiteLoader() {
   if (!siteLoader || siteLoaderDismissed) return;
   siteLoaderDismissed = true;
+  resetHomeAnimations();
   siteLoader.classList.add('is-leaving');
   document.body.classList.remove('is-loading');
   setTimeout(() => {
@@ -1466,7 +1467,7 @@ async function updatePageView(hash = location.hash, animate = true) {
     else item.removeAttribute('aria-current');
   });
   document.title = activePage === 'home' ? 'BTKJ Archive' : selectedActor ? selectedActor.name + ' — Aktorzy — BTKJ Archive' : selectedVodStream ? selectedVodStream.title + ' — ' + selectedVodSeason.title + ' — VODy — BTKJ Archive' : selectedVodSeason ? selectedVodSeason.title + ' — VODy — BTKJ Archive' : pages[activePage] + ' — BTKJ Archive';
-  if (activePage === 'home') requestAnimationFrame(restartHomeAnimations);
+  if (activePage === 'home' && (!siteLoader?.isConnected || siteLoaderDismissed)) requestAnimationFrame(restartHomeAnimations);
   if (transition) {
     document.body.classList.remove('page-leaving');
     document.body.classList.add('page-entering');
