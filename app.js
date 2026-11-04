@@ -530,7 +530,7 @@ const vodSeasons = [{
     contentScore: 0, contentNote: 'nic ciekawego', url: '',
     actors: [{name:'Menel Sadownik', role:'Współpracownik na pracy sadownika.', slug:'menel-sadownik'}],
     clips: [
-      {id:'IncredulousBoringDadOSfrog', title:'Jazda na prace sadownika', date:'2020-05-23', url:'https://clips.twitch.tv/IncredulousBoringDadOSfrog?tt_content=url&tt_medium=clips_api'},
+      {id:'20200523-incredulous-boring-dad-osfrog-source', source:'archive', title:'Jazda na prace sadownika', date:'2020-05-23', url:'https://archive.org/details/20200523-incredulous-boring-dad-osfrog-source'},
       {id:'DiligentConcernedBasenjiKlappa', title:'Jazda na meline.', date:'2020-05-23', url:'https://clips.twitch.tv/DiligentConcernedBasenjiKlappa?tt_content=url&tt_medium=clips_api'},
       {id:'SmellyFaintEndiveHumbleLife', title:'Sneakpeak nowego odcinka', date:'2020-05-23', url:'https://clips.twitch.tv/SmellyFaintEndiveHumbleLife?tt_content=url&tt_medium=clips_api'},
       {id:'EncouragingChillySpiderHumbleLife', title:'Zapisywanie numeru do ziomka od pożyczek.', date:'2020-05-23', url:'https://clips.twitch.tv/EncouragingChillySpiderHumbleLife?tt_content=url&tt_medium=clips_api'}
@@ -810,7 +810,9 @@ function vodStreamActorsMarkup(stream) {
 function vodStreamClipCardMarkup(clip, stream) {
   const date = parseVodDay(clip?.date) !== null ? clip.date : vodDateKey(stream);
   const dateLabel = formatVodDate(date);
-  return `<button class="clip-card" type="button" data-clip-id="${vodEscape(clip.id)}" data-clip-search="${vodEscape(`${clip.title} ${dateLabel} ${date}`)}" aria-label="Odtwórz klip ${vodEscape(clip.title)} w odtwarzaczu"><span class="clip-preview" aria-hidden="true"><iframe class="clip-preview-frame" data-clip-preview title="Pierwsza klatka klipu ${vodEscape(clip.title)}" tabindex="-1" loading="lazy"></iframe></span><span class="clip-content"><strong>${vodEscape(clip.title)}</strong><time datetime="${date}">${dateLabel}</time><span class="clip-open">Odtwórz klip <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span></span></button>`;
+  const source = clip?.source === 'archive' ? 'archive' : 'twitch';
+  const sourceLabel = source === 'archive' ? 'ARCHIVE.ORG' : 'TWITCH CLIP';
+  return `<button class="clip-card${source === 'archive' ? ' archive-clip-card' : ''}" type="button" data-clip-id="${vodEscape(clip.id)}" data-clip-source="${source}" data-clip-url="${vodEscape(clip.url || '')}" data-clip-search="${vodEscape(`${clip.title} ${dateLabel} ${date} ${sourceLabel}`)}" aria-label="Odtwórz klip ${vodEscape(clip.title)} w odtwarzaczu"><span class="clip-preview" aria-hidden="true"><iframe class="clip-preview-frame" data-clip-preview title="Pierwsza klatka klipu ${vodEscape(clip.title)}" tabindex="-1" loading="lazy"></iframe><small>${sourceLabel}</small></span><span class="clip-content"><strong>${vodEscape(clip.title)}</strong><time datetime="${date}">${dateLabel}</time><span class="clip-open">Odtwórz klip <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5z"/></svg></span></span></button>`;
 }
 function vodStreamClipsMarkup(stream) {
   const clips = Array.isArray(stream?.clips) ? stream.clips : [];
@@ -892,10 +894,20 @@ function getClipEmbedUrl(clipId, autoplay) {
   embedUrl.searchParams.set('autoplay', String(autoplay));
   return embedUrl;
 }
+function getArchiveEmbedUrl(identifier, autoplay = false) {
+  const embedUrl = new URL(`https://archive.org/embed/${encodeURIComponent(identifier)}`);
+  if (autoplay) embedUrl.searchParams.set('autoplay', '1');
+  return embedUrl;
+}
 function hydrateClipPreviews(root = document) {
   root?.querySelectorAll('[data-clip-id]').forEach(card => {
     const preview = card.querySelector('[data-clip-preview]');
-    if (preview && !preview.hasAttribute('src')) preview.src = getClipEmbedUrl(card.dataset.clipId, false);
+    if (!preview || preview.hasAttribute('src')) return;
+    if (card.dataset.clipSource === 'archive') {
+      preview.src = getArchiveEmbedUrl(card.dataset.clipId, false);
+      return;
+    }
+    preview.src = getClipEmbedUrl(card.dataset.clipId, false);
   });
 }
 function openClipPlayer(card) {
@@ -903,9 +915,15 @@ function openClipPlayer(card) {
   const title = card.querySelector('.clip-content>strong')?.textContent?.trim() || 'Klip Twitch';
   const sourceTime = card.querySelector('time');
   const dateLabel = sourceTime?.textContent?.replace(/\s+/g, ' ').trim() || 'Brak daty';
+  const isArchive = card.dataset.clipSource === 'archive';
   if (clipPlayerTitle) clipPlayerTitle.textContent = title;
+  const playerType = clipPlayerDialog.querySelector('.clip-player-heading small');
+  const playerSource = clipPlayerDialog.querySelector('.clip-player-meta span');
+  if (playerType) playerType.textContent = isArchive ? 'ARCHIVE.ORG · ZAPIS KLIPU' : 'TWITCH CLIP';
+  if (playerSource) playerSource.textContent = isArchive ? 'Odtwarzacz Archive.org' : 'Odtwarzacz Twitch';
+  clipPlayerDialog.classList.toggle('archive-player', isArchive);
   clipPlayerFrame.title = `Odtwarzacz klipu ${title}`;
-  clipPlayerFrame.src = getClipEmbedUrl(card.dataset.clipId, true);
+  clipPlayerFrame.src = isArchive ? getArchiveEmbedUrl(card.dataset.clipId, true) : getClipEmbedUrl(card.dataset.clipId, true);
   if (clipPlayerTime) {
     clipPlayerTime.textContent = dateLabel;
     const datetime = sourceTime?.getAttribute('datetime');
