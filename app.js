@@ -575,6 +575,17 @@ const vodSeasons = [{
     durationMinutes: 75, category: 'games', archiveStatus: 'lost',
     description: 'Teamfight Tactics i chwila League of Legends.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
+  }, {
+    slug: 'elon-odpala-rakiete-a-ja-odpalam-streama', title: 'elon odpala rakiete a ja odpalam streama',
+    startedAt: '2020-05-30T20:40:00+02:00', endedAt: '2020-05-31T00:25:00+02:00',
+    durationMinutes: 225, category: 'games',
+    description: 'Dalej GTA V RP, pojawił się Minecraft Dungeons, Elon odpala rakietę w kosmos i podziękowania za followy.',
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
+    clips: [
+      {id:'UgliestLitigiousTeaAliens', title:'Dzieki za followka ale sie nie wyświetlił', date:'2020-05-30', url:'https://clips.twitch.tv/UgliestLitigiousTeaAliens?tt_content=url&tt_medium=clips_api'},
+      {id:'StrongArtsyPartridgeCopyThis', title:'Minecraft Dungeon pogadanki', date:'2020-05-30', url:'https://clips.twitch.tv/StrongArtsyPartridgeCopyThis?tt_content=url&tt_medium=clips_api'},
+      {id:'SquareGlutenFreeGalagoResidentSleeper', title:'Dzieki za followka', date:'2020-05-30', url:'https://clips.twitch.tv/SquareGlutenFreeGalagoResidentSleeper?tt_content=url&tt_medium=clips_api'}
+    ]
   }]
 }];
 const vodSearch = document.querySelector('#vod-search');
