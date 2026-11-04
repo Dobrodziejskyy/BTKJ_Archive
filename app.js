@@ -556,7 +556,8 @@ const vodSeasons = [{
       {id:'SlipperyCoweringEndiveBuddhaBar', title:'Opinia o streamerkach', date:'2020-05-24', url:'https://clips.twitch.tv/SlipperyCoweringEndiveBuddhaBar?tt_content=url&tt_medium=clips_api'},
       {id:'AntsyTriumphantTardigradeDoritosChip', title:'Rozkminka o liczbie widzów', date:'2020-05-24', url:'https://clips.twitch.tv/AntsyTriumphantTardigradeDoritosChip?tt_content=url&tt_medium=clips_api'},
       {id:'SpinelessFineWolfOptimizePrime', title:'Crisu gej?', date:'2020-05-24', url:'https://clips.twitch.tv/SpinelessFineWolfOptimizePrime?tt_content=url&tt_medium=clips_api'},
-      {id:'SpunkyInnocentCheeseVoteNay', title:'Siema kutasik', date:'2020-05-24', url:'https://clips.twitch.tv/SpunkyInnocentCheeseVoteNay?tt_content=url&tt_medium=clips_api'}
+      {id:'SpunkyInnocentCheeseVoteNay', title:'Siema kutasik', date:'2020-05-24', url:'https://clips.twitch.tv/SpunkyInnocentCheeseVoteNay?tt_content=url&tt_medium=clips_api'},
+      {id:'AggressiveObservantTroutFunRun', title:'Widzowie wychodzą ze stream', date:'2020-05-24', url:'https://clips.twitch.tv/AggressiveObservantTroutFunRun?tt_content=url&tt_medium=clips_api'}
     ]
   }, {
     slug: 'rp-wesley-craft-fastlife-rp', title: 'RP ⭐Wesley Craft ⭐ FastLife RP',
