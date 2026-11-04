@@ -517,8 +517,9 @@ function renderMediaCatalog() {
 document.querySelector('#media-search')?.addEventListener('input', renderMediaCatalog);
 renderMediaCatalog();
 
-// Uzupełniając stream, dodaj: title, startedAt, durationMinutes, category
-// ('music' lub 'games') oraz archiveStatus ('available', 'partial' lub 'lost').
+// Uzupełniając stream, dodaj: title, startedAt, durationMinutes i category
+// ('music' lub 'games'). Pełny zapis w url oznacza status available, a klipy
+// status partial. archiveStatus służy jako ręczny status, gdy nie ma materiałów.
 // Wszystkie wartości w panelu sezonu są liczone z tych rekordów.
 const vodSeasons = [{
   slug: 'prequel', number: 1, title: 'Prequel', platform: 'Twitch',
@@ -526,7 +527,7 @@ const vodSeasons = [{
   knownStreamCount: 8, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
-    durationMinutes: 250, category: 'games', archiveStatus: 'partial',
+    durationMinutes: 250, category: 'games',
     description: 'Pierwszy stream wiesia palety na GTA V RP. Jazda na sadowniku z jakimś menelem. Sneak peak odcinka na yt i opinia crisa o jego nowym filmie. Dodawanie do kontaktów Marcello ziomka od pożyczek i nauka ortografii.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '',
     actors: [{name:'Menel Sadownik', role:'Współpracownik na pracy sadownika.', slug:'menel-sadownik'}],
@@ -545,7 +546,7 @@ const vodSeasons = [{
   }, {
     slug: 'czat-spam-jsapd-24-maja', title: 'czat spam JSAPD',
     startedAt: '2020-05-24T22:20:00+02:00', endedAt: '2020-05-25T03:55:00+02:00',
-    durationMinutes: 335, category: 'games', archiveStatus: 'partial',
+    durationMinutes: 335, category: 'games',
     description: 'Nocny ciąg dalszy streamów pod niezmienionym tytułem „czat spam JSAPD”. Zachowane klipy pokazują luźne rozmowy z czatem: od brudnej prawdy i opinii o streamerkach po rozkminki o liczbie widzów oraz typowy nocny spam.',
     contentScore: 1, contentNote: 'kilka ciekawych momentów', url: '', actors: [],
     clips: [
@@ -559,7 +560,7 @@ const vodSeasons = [{
   }, {
     slug: 'rp-wesley-craft-fastlife-rp', title: 'RP ⭐Wesley Craft ⭐ FastLife RP',
     startedAt: '2020-05-27T16:52:00+02:00', endedAt: '2020-05-27T23:45:00+02:00',
-    durationMinutes: 413, category: 'games', archiveStatus: 'partial',
+    durationMinutes: 413, category: 'games',
     description: 'Nowy serwer GTA V RP, sprawdzanie strony Towarzysza Twitch i ubieranie postaci. W trakcie pojawiają się też chwile z Forza Horizon 4.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
@@ -645,6 +646,8 @@ function formatVodClock(minutes) {
   return `${String(Math.floor(normalized / 60)).padStart(2, '0')}:${String(normalized % 60).padStart(2, '0')}`;
 }
 function vodArchiveStatus(stream) {
+  if (String(stream?.url || '').trim()) return 'available';
+  if (Array.isArray(stream?.clips) && stream.clips.length) return 'partial';
   if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'partial' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
   if (stream?.available === true) return 'available';
   if (stream?.available === false) return 'lost';
