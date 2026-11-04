@@ -1710,7 +1710,7 @@ function refreshPromiseBalances(applyWidths = false, applyValues = true) {
     if (applyWidths) {
       track.classList.add('balance-values-visible');
       card.querySelector('.balance-done').style.width = doneWidth + '%';
-      card.querySelector('.balance-failed').style.width = failedWidth + '%';
+      card.querySelector('.balance-failed').style.width = '100%';
     }
   });
 }
@@ -1793,7 +1793,7 @@ function restartHomeAnimations() {
     const doneSegment = track?.querySelector('.balance-done');
     const failedSegment = track?.querySelector('.balance-failed');
     if (doneSegment) doneSegment.style.width = '0%';
-    if (failedSegment) failedSegment.style.width = failedSegment.dataset.width + '%';
+    if (failedSegment) failedSegment.style.width = '100%';
     track?.classList.add('balance-values-visible');
     setTimeout(() => {
       if (run !== homeAnimationRun) return;
