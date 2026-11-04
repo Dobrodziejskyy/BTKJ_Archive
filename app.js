@@ -530,7 +530,7 @@ const vodSeasons = [{
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
     durationMinutes: 250, category: 'games',
     description: 'Pierwszy stream wiesia palety na GTA V RP. Jazda na sadowniku z jakimś menelem. Sneak peak odcinka na yt i opinia crisa o jego nowym filmie. Dodawanie do kontaktów Marcello ziomka od pożyczek i nauka ortografii.',
-    contentScore: 0, contentNote: 'nic ciekawego', url: '',
+    contentScore: 1, contentNote: 'nic ciekawego', url: '',
     actors: [{name:'Menel Sadownik', role:'Współpracownik na pracy sadownika.', slug:'menel-sadownik'}],
     clips: [
       {id:'20200523-incredulous-boring-dad-osfrog-source', source:'archive', title:'Jazda na prace sadownika', date:'2020-05-23', url:'https://archive.org/details/20200523-incredulous-boring-dad-osfrog-source'},
