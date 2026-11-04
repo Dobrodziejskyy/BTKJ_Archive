@@ -893,7 +893,9 @@ function vodDayValueFromLabel(label) {
 }
 function resetVodStatistics(panel) {
   if (!panel) return;
+  panel.dataset.vodAnimationRun = String((Number(panel.dataset.vodAnimationRun) || 0) + 1);
   panel.classList.remove('vod-stats-animating');
+  panel.classList.add('vod-stats-reset');
   panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => {
     bar.dataset.targetWidth ||= bar.style.width;
     bar.style.width = '0%';
@@ -913,24 +915,26 @@ function resetVodStatistics(panel) {
 function animateVodStatistics(panel) {
   if (!panel || !motionAllowed()) return;
   resetVodStatistics(panel);
-  setTimeout(() => {
-    if (!panel.isConnected || panel.getAttribute('aria-hidden') === 'true') return;
-    panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
-      const target = Number(number.dataset.targetValue);
-      if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720);
-    });
-    panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
-      const targetLabel = number.dataset.targetLabel || '';
-      const duration = vodDurationFromLabel(targetLabel);
-      const days = vodDayValueFromLabel(targetLabel);
-      if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820);
-      else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760);
-    });
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      panel.classList.add('vod-stats-animating');
-      panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
-    }));
-  }, 150);
+  const run = panel.dataset.vodAnimationRun;
+  const isCurrent = () => panel.isConnected && panel.dataset.vodAnimationRun === run && panel.getAttribute('aria-hidden') !== 'true';
+  void panel.offsetWidth;
+  panel.classList.remove('vod-stats-reset');
+  panel.querySelectorAll('.vod-stats-overview p>strong, .vod-stats-overview p>b').forEach(number => {
+    const target = Number(number.dataset.targetValue);
+    if (Number.isFinite(target)) animateNumber(number, target, value => String(value), 720, isCurrent);
+  });
+  panel.querySelectorAll('.vod-category-stat strong, .vod-stat-tile>strong').forEach(number => {
+    const targetLabel = number.dataset.targetLabel || '';
+    const duration = vodDurationFromLabel(targetLabel);
+    const days = vodDayValueFromLabel(targetLabel);
+    if (duration !== null) animateNumber(number, duration, formatVodDurationZero, 820, isCurrent);
+    else if (days) animateNumber(number, days.value, value => formatVodDays(value, days.prefix), 760, isCurrent);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!isCurrent()) return;
+    panel.classList.add('vod-stats-animating');
+    panel.querySelectorAll('.vod-archive-track i, .vod-month-track i').forEach(bar => { bar.style.width = bar.dataset.targetWidth; });
+  }));
 }
 vodSearch?.addEventListener('input', renderVodSeasons);
 vodSeasonView?.addEventListener('click', event => {
@@ -940,6 +944,7 @@ vodSeasonView?.addEventListener('click', event => {
   const reveal = panel.closest('.vod-stats-reveal');
   const expanded = toggle.getAttribute('aria-expanded') === 'true';
   if (!expanded) animateVodStatistics(panel);
+  else resetVodStatistics(panel);
   toggle.setAttribute('aria-expanded', String(!expanded));
   toggle.classList.toggle('active', !expanded);
   reveal.classList.toggle('is-open', !expanded);
@@ -1556,7 +1561,7 @@ document.querySelector('.archive-topbar')?.addEventListener('click', event => {
   icon.classList.add('nav-icon-activated');
   icon.addEventListener('animationend', () => icon.classList.remove('nav-icon-activated'), {once:true});
 });
-function animateNumber(element, target, format, duration = 900) {
+function animateNumber(element, target, format, duration = 900, shouldContinue = () => true) {
   if (!motionAllowed() || target === 0) {
     element.textContent = format(target);
     return;
@@ -1564,6 +1569,7 @@ function animateNumber(element, target, format, duration = 900) {
   element.textContent = format(0);
   let start;
   const step = now => {
+    if (!shouldContinue()) return;
     start ??= now;
     const progress = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - progress, 3);
