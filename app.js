@@ -880,6 +880,7 @@ function renderVodSeasonDetail(season) {
   statsToggle.setAttribute('aria-expanded', 'false');
   statsPanel.setAttribute('aria-hidden', 'true');
   statsPanel.inert = true;
+  if (motionAllowed()) resetVodStatistics(statsPanel);
   vodSeasonView.insertAdjacentHTML('beforeend', vodStreamListMarkup(season));
 }
 function vodDurationFromLabel(label) {
@@ -938,12 +939,12 @@ vodSeasonView?.addEventListener('click', event => {
   const panel = vodSeasonView.querySelector('#vod-season-stats');
   const reveal = panel.closest('.vod-stats-reveal');
   const expanded = toggle.getAttribute('aria-expanded') === 'true';
+  if (!expanded) animateVodStatistics(panel);
   toggle.setAttribute('aria-expanded', String(!expanded));
   toggle.classList.toggle('active', !expanded);
   reveal.classList.toggle('is-open', !expanded);
   panel.setAttribute('aria-hidden', String(expanded));
   panel.inert = expanded;
-  if (!expanded) setTimeout(() => animateVodStatistics(panel), 40);
 });
 renderVodSeasons();
 
