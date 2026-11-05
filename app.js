@@ -568,7 +568,7 @@ renderMediaCatalog();
 const vodSeasons = [{
   slug: 'prequel', number: 0, title: 'Prequel', platform: 'Twitch',
   description: 'Pierwsze streamy na twitch', startDate: '2020-05-23', endDate: '2020-10-15',
-  knownStreamCount: 9, streams: [{
+  knownStreamCount: 10, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
     durationMinutes: 250, category: 'games',
@@ -643,11 +643,19 @@ const vodSeasons = [{
       {id:'KindWonderfulStrawberryCharlieBitMe', title:'Brak nazwy', date:'2020-06-03', time:'21:50', url:'https://clips.twitch.tv/KindWonderfulStrawberryCharlieBitMe?tt_content=url&tt_medium=clips_api'}
     ]
   }, {
+    slug: 'nowa-ulubiona-gra', title: 'Nowa ulubiona gra',
+    startedAt: '2020-06-04', archiveStatus: 'minimal',
+    description: 'Brak pełnych danych o transmisji. Jedyny zachowany klip pokazuje rozgrywkę w Valorant oraz podziękowanie za nowego followa.',
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
+    clips: [
+      {id:'GrotesqueTrappedHeronOSsloth', title:'Valorant i dziękowanie za follow', date:'2020-06-04', time:'15:44', url:'https://clips.twitch.tv/GrotesqueTrappedHeronOSsloth?tt_content=url&tt_medium=clips_api'}
+    ]
+  }, {
     slug: 'bardzo-luzny-strimek', title: 'bardzo luźny strimek😋',
     startedAt: '2020-10-12T18:05:00+02:00', endedAt: '2020-10-12T20:05:00+02:00',
     durationMinutes: 120, category: 'games',
     description: 'Zachował się jeden klip. Stream po półrocznej przerwie, w całości poświęcony ARK: Survival Evolved.',
-    contentScore: 0, url: '', actors: [],
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
       {id:'SmokySuccessfulPeanutPartyTime', title:"rozmowa o ARK'u", date:'2020-10-12', url:'https://clips.twitch.tv/SmokySuccessfulPeanutPartyTime?tt_content=url&tt_medium=clips_api'}
     ]
@@ -656,7 +664,7 @@ const vodSeasons = [{
     startedAt: '2020-10-15T18:15:00+02:00', endedAt: '2020-10-15T19:45:00+02:00',
     durationMinutes: 90, category: 'games', archiveStatus: 'lost',
     description: 'Stream z Rocket League. Nic się nie zachowało.',
-    contentScore: 0, url: '', actors: [], clips: []
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [], clips: []
   }]
 }, {
   slug: 'sezon-1', number: 1, title: 'Sezon 1', platform: 'Twitch',
