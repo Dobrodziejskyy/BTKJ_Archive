@@ -418,8 +418,8 @@ document.querySelector('#actor-filters').addEventListener('click', event => {
 renderActors();
 
 const mediaItems = [
-  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto przód', type:'photo', category:'general', categoryLabel:'Ogólne'},
-  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto tył', type:'photo', category:'general', categoryLabel:'Ogólne'},
+  {src:'./assets/images/media/btkj-gang-bmw-front.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od przodu', title:'BMW BTKJ Gang — przód', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto przód tapeta', type:'photo', category:'wallpapers', categoryLabel:'Tapety'},
+  {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto tył tapeta', type:'photo', category:'wallpapers', categoryLabel:'Tapety'},
   {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', tags:'Minecraft serwer sezon 1 pierwszy sezon Steve dom', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
   {src:'./assets/images/media/minecraft-expiarka.webp', alt:'Minecraftowa expiarka ze szkła i bloków ziemi na terenie sawanny', title:'Minecraft - Expiarka', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft expiarka pierwszy sezon serwer sawanna szkło', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
   {src:'./assets/images/media/minecraft-glowny-teren-serwera.webp', alt:'Nocny widok głównego terenu serwera Minecraft z domami i oświetlonym wzgórzem', title:'Minecraft - Główny teren serwera', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft główny teren serwera pierwszy sezon domy noc', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'}
@@ -435,9 +435,17 @@ if (mediaGrid && existingMediaCards < mediaItems.length) {
     return `<button class="media-card" type="button" data-media-type="${mediaEscape(item.type)}" data-media-category="${mediaEscape(item.category)}" data-media-index="${index}" aria-label="Otwórz zdjęcie: ${mediaEscape(item.title)}"><img src="${mediaEscape(item.src)}" alt="${mediaEscape(item.alt)}" width="1440" height="900" loading="lazy" decoding="async"><span><small>${mediaEscape(item.categoryLabel).toLocaleUpperCase('pl')}</small><span class="media-card-copy"><strong>${mediaEscape(item.title)}</strong><time datetime="${item.datetime}">${mediaEscape(item.created)}</time></span></span></button>`;
   }).join(''));
 }
+mediaGrid?.querySelectorAll('[data-media-index]').forEach(card => {
+  const item = mediaItems[Number(card.dataset.mediaIndex)];
+  if (!item) return;
+  card.dataset.mediaCategory = item.category;
+  const category = card.querySelector('small');
+  if (category) category.textContent = item.categoryLabel.toLocaleUpperCase('pl');
+});
 document.querySelector('[data-media-filter="all"] small').textContent = `${mediaItems.length} plików`;
 document.querySelector('[data-media-filter="photo"] small').textContent = `${mediaItems.filter(item => item.type === 'photo').length} plików`;
 document.querySelector('[data-media-category="all"] span').textContent = mediaItems.length;
+document.querySelector('[data-media-category="wallpapers"] span').textContent = mediaItems.filter(item => item.category === 'wallpapers').length;
 document.querySelector('[data-media-category="minecraft-season-1"] span').textContent = mediaItems.filter(item => item.category === 'minecraft-season-1').length;
 let activeMediaIndex = 0;
 let mediaFilter = 'all';
@@ -522,7 +530,7 @@ function renderMediaCatalog() {
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
   const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
-  const categoryLabels = {general:'Ogólne','minecraft-season-1':'Pierwszy sezon Minecraft'};
+  const categoryLabels = {wallpapers:'Tapety','minecraft-season-1':'Pierwszy sezon Minecraft'};
   document.querySelector('#media-group-title').textContent = mediaCategory === 'all' ? labels[mediaFilter] : categoryLabels[mediaCategory];
   document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
   const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)))].sort();
