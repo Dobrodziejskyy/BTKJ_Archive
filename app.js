@@ -525,7 +525,7 @@ renderMediaCatalog();
 const vodSeasons = [{
   slug: 'prequel', number: 0, title: 'Prequel', platform: 'Twitch',
   description: 'Pierwsze streamy na twitch', startDate: '2020-05-23', endDate: '2020-10-15',
-  knownStreamCount: 8, streams: [{
+  knownStreamCount: 9, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
     durationMinutes: 250, category: 'games',
@@ -590,6 +590,14 @@ const vodSeasons = [{
       {id:'UgliestLitigiousTeaAliens', title:'Dzieki za followka ale sie nie wyświetlił', date:'2020-05-30', url:'https://clips.twitch.tv/UgliestLitigiousTeaAliens?tt_content=url&tt_medium=clips_api'},
       {id:'StrongArtsyPartridgeCopyThis', title:'Minecraft Dungeon pogadanki', date:'2020-05-30', url:'https://clips.twitch.tv/StrongArtsyPartridgeCopyThis?tt_content=url&tt_medium=clips_api'},
       {id:'SquareGlutenFreeGalagoResidentSleeper', title:'Dzieki za followka', date:'2020-05-30', url:'https://clips.twitch.tv/SquareGlutenFreeGalagoResidentSleeper?tt_content=url&tt_medium=clips_api'}
+    ]
+  }, {
+    slug: 'brak-nazwy-3-czerwca-2020', title: 'Brak nazwy',
+    startedAt: '2020-06-03', archiveStatus: 'partial',
+    description: 'Brak większej ilości danych. Zachował się wyłącznie jeden klip utworzony o 21:50.',
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
+    clips: [
+      {id:'KindWonderfulStrawberryCharlieBitMe', title:'Brak nazwy', date:'2020-06-03', time:'21:50', url:'https://clips.twitch.tv/KindWonderfulStrawberryCharlieBitMe?tt_content=url&tt_medium=clips_api'}
     ]
   }, {
     slug: 'bardzo-luzny-strimek', title: 'bardzo luźny strimek😋',
@@ -693,9 +701,9 @@ function formatVodClock(minutes) {
 }
 function vodArchiveStatus(stream) {
   if (String(stream?.url || '').trim()) return 'available';
+  if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'trace' || stream?.archiveStatus === 'partial' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
   if (Array.isArray(stream?.clips) && stream.clips.length === 1) return 'trace';
   if (Array.isArray(stream?.clips) && stream.clips.length > 1) return 'partial';
-  if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'trace' || stream?.archiveStatus === 'partial' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
   if (stream?.available === true) return 'available';
   if (stream?.available === false) return 'lost';
   return 'unknown';
@@ -958,7 +966,8 @@ function vodStreamActorsMarkup(stream) {
 }
 function vodStreamClipCardMarkup(clip, stream) {
   const date = parseVodDay(clip?.date) !== null ? clip.date : vodDateKey(stream);
-  const dateLabel = formatVodDate(date);
+  const clipTime = /^\d{2}:\d{2}$/.test(String(clip?.time || '')) ? clip.time : '';
+  const dateLabel = `${formatVodDate(date)}${clipTime ? ` · ${clipTime}` : ''}`;
   const source = clip?.source === 'archive' ? 'archive' : 'twitch';
   const sourceLabel = source === 'archive' ? 'ARCHIVE.ORG' : 'TWITCH CLIP';
   const preview = source === 'archive'
