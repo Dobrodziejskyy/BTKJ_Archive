@@ -593,7 +593,7 @@ const vodSeasons = [{
     ]
   }, {
     slug: 'brak-nazwy-3-czerwca-2020', title: 'Brak nazwy',
-    startedAt: '2020-06-03', archiveStatus: 'partial',
+    startedAt: '2020-06-03', archiveStatus: 'minimal',
     description: 'Brak większej ilości danych. Zachował się wyłącznie jeden klip utworzony o 21:50.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
@@ -701,7 +701,7 @@ function formatVodClock(minutes) {
 }
 function vodArchiveStatus(stream) {
   if (String(stream?.url || '').trim()) return 'available';
-  if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'trace' || stream?.archiveStatus === 'partial' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
+  if (stream?.archiveStatus === 'available' || stream?.archiveStatus === 'trace' || stream?.archiveStatus === 'minimal' || stream?.archiveStatus === 'partial' || stream?.archiveStatus === 'lost') return stream.archiveStatus;
   if (Array.isArray(stream?.clips) && stream.clips.length === 1) return 'trace';
   if (Array.isArray(stream?.clips) && stream.clips.length > 1) return 'partial';
   if (stream?.available === true) return 'available';
@@ -756,11 +756,12 @@ function calculateVodStats(season) {
   const months = [...monthsByKey.values()].sort((a, b) => a.key.localeCompare(b.key));
   const available = streams.filter(stream => vodArchiveStatus(stream) === 'available');
   const trace = streams.filter(stream => vodArchiveStatus(stream) === 'trace');
+  const minimal = streams.filter(stream => vodArchiveStatus(stream) === 'minimal');
   const partial = streams.filter(stream => vodArchiveStatus(stream) === 'partial');
   const lost = streams.filter(stream => vodArchiveStatus(stream) === 'lost');
-  const unknownArchive = Math.max(0, total - available.length - trace.length - partial.length - lost.length);
+  const unknownArchive = Math.max(0, total - available.length - trace.length - minimal.length - partial.length - lost.length);
   const detailed = streams.filter(stream => parseVodDay(vodDateKey(stream)) !== null && /T\d{2}:\d{2}/.test(String(stream.startedAt || '')) && Number.isFinite(stream.durationMinutes) && stream.durationMinutes > 0 && ['music','muzyka','games','gierki'].includes(stream.category) && vodArchiveStatus(stream) !== 'unknown').length;
-  return {streams, total, music, games, durationStreams, totalDuration, musicDuration, gamesDuration, averageDuration, shortest, longest, dated, averageFrequency, longestBreak, longestDaily, typicalStart, typicalEnd, months, available, trace, partial, lost, unknownArchive, detailed};
+  return {streams, total, music, games, durationStreams, totalDuration, musicDuration, gamesDuration, averageDuration, shortest, longest, dated, averageFrequency, longestBreak, longestDaily, typicalStart, typicalEnd, months, available, trace, minimal, partial, lost, unknownArchive, detailed};
 }
 function vodSeasonRange(season) {
   const dates = [season.startDate, season.endDate, ...(season.streams || []).map(vodDateKey)].filter(value => parseVodDay(value) !== null).sort();
@@ -912,18 +913,19 @@ function vodContentStatsMarkup(stats) {
 }
 function vodArchiveLabel(stream) {
   const status = vodArchiveStatus(stream);
-  return status === 'trace' ? 'ŚLADOWO ZACHOWANY' : status === 'partial' ? 'CZĘŚCIOWE LOST MEDIA' : status === 'lost' ? 'LOST MEDIA' : status === 'available' ? 'ZACHOWANY' : 'BRAK DANYCH';
+  return status === 'trace' ? 'ŚLADOWO ZACHOWANY' : status === 'minimal' ? 'SZCZĄTKOWE DANE' : status === 'partial' ? 'CZĘŚCIOWE LOST MEDIA' : status === 'lost' ? 'LOST MEDIA' : status === 'available' ? 'ZACHOWANY' : 'BRAK DANYCH';
 }
 function vodArchiveDetail(stream) {
   const status = vodArchiveStatus(stream);
-  return status === 'trace' ? 'Śladowo zachowany — dostępny jest tylko jeden klip ze streama.' : status === 'partial' ? 'Częściowo zachowany — dostępne są klipy ze streama.' : status === 'lost' ? 'Brak linku — stream jest lost media.' : 'Brak linku do zapisu streamu.';
+  return status === 'trace' ? 'Śladowo zachowany — dostępny jest tylko jeden klip ze streama.' : status === 'minimal' ? 'Szczątkowe dane — znana jest jedynie data utworzenia klipu.' : status === 'partial' ? 'Częściowo zachowany — dostępne są klipy ze streama.' : status === 'lost' ? 'Brak linku — stream jest lost media.' : 'Brak linku do zapisu streamu.';
 }
 function vodLostThumbnailMarkup(stream, large = false) {
   const status = vodArchiveStatus(stream);
   const trace = status === 'trace';
+  const minimal = status === 'minimal';
   const partial = status === 'partial';
   const label = vodArchiveLabel(stream);
-  return `<span class="vod-stream-lost-thumb${trace ? ' trace' : partial ? ' partial' : ''}${large ? ' large' : ''}" role="img" aria-label="${trace ? 'Śladowo zachowany stream' : partial ? 'Częściowo zachowany stream' : 'Brak zachowanej miniatury streamu'} ${vodEscape(stream.title)}"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="25" height="24" rx="4"/><path d="m33 20 8-5v18l-8-5M6 6l36 36"/></svg><small>${label}</small></span>`;
+  return `<span class="vod-stream-lost-thumb${trace ? ' trace' : minimal ? ' minimal' : partial ? ' partial' : ''}${large ? ' large' : ''}" role="img" aria-label="${trace ? 'Śladowo zachowany stream' : minimal ? 'Stream ze szczątkowymi danymi' : partial ? 'Częściowo zachowany stream' : 'Brak zachowanej miniatury streamu'} ${vodEscape(stream.title)}"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="25" height="24" rx="4"/><path d="m33 20 8-5v18l-8-5M6 6l36 36"/></svg><small>${label}</small></span>`;
 }
 function vodStreamListMarkup(season) {
   const streams = [...(season.streams || [])].sort((a, b) => vodDateKey(a).localeCompare(vodDateKey(b)) || String(a.startedAt).localeCompare(String(b.startedAt)));
@@ -944,10 +946,11 @@ function vodStreamListMarkup(season) {
       const archiveStatus = vodArchiveStatus(stream);
       const lost = archiveStatus === 'lost';
       const trace = archiveStatus === 'trace';
+      const minimal = archiveStatus === 'minimal';
       const partial = archiveStatus === 'partial';
       const meter = vodContentMeterMarkup(stream, 'vod-stream-card-meter');
       const contentLabel = vodContentMeterLabel(stream);
-      return `<a class="vod-stream-card" href="#vody/${encodeURIComponent(season.slug)}/${encodeURIComponent(stream.slug)}" aria-label="Otwórz stream ${vodEscape(stream.title)}; ${vodEscape(contentLabel)}"><span class="vod-stream-number">${number}</span>${vodLostThumbnailMarkup(stream)}<span class="vod-stream-card-body"><span class="vod-stream-card-head"><span class="vod-stream-card-meta"><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time><span>${vodTimeRange(stream)}</span><span>${formatVodDurationShort(stream.durationMinutes)}</span>${(lost || trace || partial) ? `<b class="${trace ? 'trace' : partial ? 'partial' : ''}">${vodArchiveLabel(stream)}</b>` : ''}</span>${meter}</span><strong>${vodEscape(stream.title)}</strong><span class="vod-stream-card-description">${vodEscape(stream.description)}</span><span class="vod-stream-card-bottom"><span>${lost ? 'Brak zapisu' : trace ? 'Dostępny 1 klip' : partial ? 'Dostępne klipy' : vodStreamCategoryLabel(stream)}</span></span></span><span class="vod-stream-chevron" aria-hidden="true">›</span></a>`;
+      return `<a class="vod-stream-card" href="#vody/${encodeURIComponent(season.slug)}/${encodeURIComponent(stream.slug)}" aria-label="Otwórz stream ${vodEscape(stream.title)}; ${vodEscape(contentLabel)}"><span class="vod-stream-number">${number}</span>${vodLostThumbnailMarkup(stream)}<span class="vod-stream-card-body"><span class="vod-stream-card-head"><span class="vod-stream-card-meta"><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time><span>${vodTimeRange(stream)}</span><span>${formatVodDurationShort(stream.durationMinutes)}</span>${(lost || trace || minimal || partial) ? `<b class="${trace ? 'trace' : minimal ? 'minimal' : partial ? 'partial' : ''}">${vodArchiveLabel(stream)}</b>` : ''}</span>${meter}</span><strong>${vodEscape(stream.title)}</strong><span class="vod-stream-card-description">${vodEscape(stream.description)}</span><span class="vod-stream-card-bottom"><span>${lost ? 'Brak zapisu' : trace ? 'Dostępny 1 klip' : minimal ? 'Szczątkowe dane' : partial ? 'Dostępne klipy' : vodStreamCategoryLabel(stream)}</span></span></span><span class="vod-stream-chevron" aria-hidden="true">›</span></a>`;
     }).join('');
     return `<section class="panel vod-stream-month" aria-labelledby="vod-month-${monthKey}"><h2 id="vod-month-${monthKey}">${monthLabel}</h2><div class="vod-stream-month-list">${cards}</div></section>`;
   }).join('');
@@ -987,9 +990,10 @@ function renderVodStreamDetail(season, stream) {
   const archiveStatus = vodArchiveStatus(stream);
   const lost = archiveStatus === 'lost';
   const trace = archiveStatus === 'trace';
+  const minimal = archiveStatus === 'minimal';
   const partial = archiveStatus === 'partial';
-  const source = stream.url ? `<a class="vod-stream-source-link" href="${vodEscape(stream.url)}" target="_blank" rel="noopener noreferrer">Otwórz zapis streamu ↗</a>` : `<span class="vod-stream-source-missing${trace ? ' trace' : partial ? ' partial' : ''}">${vodArchiveDetail(stream)}</span>`;
-  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${(lost || trace || partial) ? `<span class="vod-lost-badge${trace ? ' trace' : partial ? ' partial' : ''}">${vodArchiveLabel(stream)}</span>` : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><h2>${vodEscape(stream.title)}</h2><dl><div><dt>Data</dt><dd><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time></dd></div><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${vodContentMeterMarkup(stream, 'vod-stream-detail-meter', true)}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${trace ? 'Śladowo zachowany' : archiveStatus === 'partial' ? 'Częściowo zachowany' : lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>${vodStreamActorsMarkup(stream)}${vodStreamClipsMarkup(stream)}`;
+  const source = stream.url ? `<a class="vod-stream-source-link" href="${vodEscape(stream.url)}" target="_blank" rel="noopener noreferrer">Otwórz zapis streamu ↗</a>` : `<span class="vod-stream-source-missing${trace ? ' trace' : minimal ? ' minimal' : partial ? ' partial' : ''}">${vodArchiveDetail(stream)}</span>`;
+  vodStreamView.innerHTML = `<div class="vod-stream-detail-heading"><div><small>${vodEscape(season.title).toLocaleUpperCase('pl')} · VOD #${number}</small><h1 id="vod-stream-title">${vodEscape(stream.title)}</h1></div>${(lost || trace || minimal || partial) ? `<span class="vod-lost-badge${trace ? ' trace' : minimal ? ' minimal' : partial ? ' partial' : ''}">${vodArchiveLabel(stream)}</span>` : ''}</div><a class="vod-stream-back" href="#vody/${encodeURIComponent(season.slug)}"><span aria-hidden="true">←</span> ${vodEscape(season.title)}</a><article class="panel vod-stream-detail-card"><div class="vod-stream-detail-media">${vodLostThumbnailMarkup(stream, true)}</div><div class="vod-stream-detail-facts"><span class="vod-stream-detail-category">${vodStreamCategoryLabel(stream)}</span><h2>${vodEscape(stream.title)}</h2><dl><div><dt>Data</dt><dd><time datetime="${vodEscape(stream.startedAt)}">${formatVodDate(vodDateKey(stream), true)}</time></dd></div><div><dt>Godziny</dt><dd>${vodTimeRange(stream)}</dd></div><div><dt>Czas trwania</dt><dd>${formatVodDurationShort(stream.durationMinutes)}</dd></div><div><dt>Kontentomierz</dt><dd>${vodContentMeterMarkup(stream, 'vod-stream-detail-meter', true)}</dd></div></dl></div><div class="vod-stream-detail-copy"><h2>Opis streamu</h2><p>${vodEscape(stream.description)}</p></div><div class="vod-stream-detail-tags"><span># VOD #${number} z ${calculateVodStats(season).total} w sezonie</span><span>${vodStreamCategoryLabel(stream)}</span><span>${trace ? 'Śladowo zachowany' : minimal ? 'Szczątkowe dane' : archiveStatus === 'partial' ? 'Częściowo zachowany' : lost ? 'Lost media' : 'Zachowany'}</span></div><div class="vod-stream-detail-source">${source}</div></article>${vodStreamActorsMarkup(stream)}${vodStreamClipsMarkup(stream)}`;
   hydrateClipPreviews(vodStreamView);
 }
 function renderVodSeasonDetail(season) {
@@ -999,10 +1003,12 @@ function renderVodSeasonDetail(season) {
   const maxMonthCount = Math.max(1, ...stats.months.map(month => month.count));
   const availableWidth = stats.total ? stats.available.length / stats.total * 100 : 0;
   const traceWidth = stats.total ? stats.trace.length / stats.total * 100 : 0;
+  const minimalWidth = stats.total ? stats.minimal.length / stats.total * 100 : 0;
   const partialWidth = stats.total ? stats.partial.length / stats.total * 100 : 0;
   const lostWidth = stats.total ? stats.lost.length / stats.total * 100 : 0;
   const traceLabel = stats.trace.length === 1 ? '1 śladowo zachowany' : `${stats.trace.length} śladowo zachowanych`;
-  const archiveLabels = `<div class="vod-archive-labels"><span class="available">${stats.available.length} zachowanych</span><span class="partial">${stats.partial.length} częściowo zachowanych</span><span class="trace">${traceLabel}</span><span class="lost">${stats.lost.length} lost media</span>${stats.unknownArchive ? `<span class="unknown">${stats.unknownArchive} bez statusu</span>` : ''}</div>`;
+  const minimalLabel = stats.minimal.length === 1 ? '1 ze szczątkowymi danymi' : `${stats.minimal.length} ze szczątkowymi danymi`;
+  const archiveLabels = `<div class="vod-archive-labels"><span class="available">${stats.available.length} zachowanych</span><span class="partial">${stats.partial.length} częściowo zachowanych</span><span class="trace">${traceLabel}</span><span class="minimal">${minimalLabel}</span><span class="lost">${stats.lost.length} lost media</span>${stats.unknownArchive ? `<span class="unknown">${stats.unknownArchive} bez statusu</span>` : ''}</div>`;
   const categoryBreakdown = `<div class="vod-category-breakdown" aria-label="Udział muzyki i gier w streamach">${vodCategoryStatMarkup('Muzyka', stats.music, stats.musicDuration, stats.total, stats.totalDuration, 'music')}${vodCategoryStatMarkup('Gierki', stats.games, stats.gamesDuration, stats.total, stats.totalDuration, 'games')}</div>`;
   const monthRows = stats.months.length ? stats.months.map(month => {
     const label = new Intl.DateTimeFormat('pl-PL', {month:'long', year:'numeric', timeZone:'UTC'}).format(parseVodDay(`${month.key}-01`));
@@ -1013,6 +1019,12 @@ function renderVodSeasonDetail(season) {
   const longestBreakDetail = stats.longestBreak ? `${formatVodTimestamp(stats.longestBreak.from)} → ${formatVodTimestamp(stats.longestBreak.to)}` : 'Brak danych o datach';
   const typicalHours = stats.typicalStart === null ? '—' : `${formatVodClock(stats.typicalStart)}${stats.typicalEnd === null ? '' : ` → ~${formatVodClock(stats.typicalEnd)}`}`;
   vodSeasonView.innerHTML = `<div class="vod-season-detail-header"><a class="vod-season-back" href="#vody" aria-label="Wróć do sezonów">←</a><div class="vod-season-identity"><small>PLATFORMA: ${vodEscape(season.platform).toLocaleUpperCase('pl')}</small><h1 id="vod-season-title">${vodEscape(season.title)}</h1><p>${vodStreamCountLabel(stats.total)} <span>·</span> ${formatVodDate(range.start)} — ${formatVodDate(range.end)}</p></div><aside><span>O sezonie</span><p>${vodEscape(season.description)}.</p></aside></div><div class="vod-season-detail-actions"><button class="vod-stats-toggle active" type="button" data-vod-stats-toggle aria-expanded="true" aria-controls="vod-season-stats"><span aria-hidden="true">${vodStatIcons.chart}</span> Statystyki</button></div><section class="panel vod-stats-panel" id="vod-season-stats" aria-labelledby="vod-stats-title"><div class="vod-stats-overview"><div><small id="vod-stats-title">STREAMY</small><p><strong>${stats.total}</strong> ${vodStreamNoun(stats.total)} <b class="vod-count-music">${stats.music}</b> muzyka <b class="vod-count-games">${stats.games}</b> gierki</p>${categoryBreakdown}</div><span>Dane <strong>${stats.detailed}/${stats.total}</strong></span></div><div class="vod-archive-summary"><div class="vod-archive-heading"><span>DOSTĘPNOŚĆ ARCHIWUM</span></div><div class="vod-archive-track" role="img" aria-label="${stats.available.length} zachowanych, ${stats.partial.length} częściowo zachowanych, ${stats.trace.length} śladowo zachowanych, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu"><i class="available" style="width:${availableWidth}%"></i><i class="partial" style="width:${partialWidth}%"></i><i class="trace" style="width:${traceWidth}%"></i><i class="lost" style="width:${lostWidth}%"></i></div>${archiveLabels}</div>${stats.detailed < stats.total ? `<p class="vod-stats-notice"><span aria-hidden="true">i</span> Statystyki uzupełnią się automatycznie po dodaniu dat, godzin, kategorii i czasu streamów.</p>` : ''}<section class="vod-stat-section"><h2>CZAS STREAMÓW</h2><div class="vod-stat-grid">${vodStatTile('total', formatVodDuration(stats.totalDuration), 'ŁĄCZNIE NA STREAMIE', durationDetail)}${vodStatTile('average', formatVodDuration(stats.averageDuration), 'ŚREDNI CZAS STREAMA', durationDetail)}${vodStatTile('longest', formatVodDuration(stats.longest?.durationMinutes), 'NAJDŁUŻSZY STREAM', vodStreamSummary(stats.longest))}${vodStatTile('shortest', formatVodDuration(stats.shortest?.durationMinutes), 'NAJKRÓTSZY STREAM', vodStreamSummary(stats.shortest))}</div></section><section class="vod-stat-section"><h2>RYTM</h2><div class="vod-stat-grid">${vodStatTile('frequency', formatVodDays(stats.averageFrequency, 'co '), 'CZĘSTOTLIWOŚĆ', stats.dated.length > 1 ? `${formatVodDate(vodDateKey(stats.dated[0].stream))} → ${formatVodDate(vodDateKey(stats.dated.at(-1).stream))}` : 'Brak danych o datach')}${vodStatTile('gap', formatVodDays(stats.longestBreak?.days), 'NAJDŁUŻSZA PRZERWA', longestBreakDetail)}${vodStatTile('daily', formatVodDays(stats.longestDaily), 'NAJDŁUŻSZE DAILY', stats.longestDaily ? 'Kolejne dni ze streamem' : 'Brak danych o datach')}${vodStatTile('hours', typicalHours, 'TYPOWE GODZINY', stats.typicalStart === null ? 'Brak danych o godzinach' : 'Średnia pora rozpoczęcia i zakończenia')}</div></section><section class="vod-stat-section vod-months"><h2>STREAMY WG MIESIĘCY</h2>${monthRows}</section>${vodContentStatsMarkup(stats)}</section>`;
+  const archiveTrack = vodSeasonView.querySelector('.vod-archive-track');
+  const minimalArchiveBar = document.createElement('i');
+  minimalArchiveBar.className = 'minimal';
+  minimalArchiveBar.style.width = `${minimalWidth}%`;
+  archiveTrack.querySelector('.lost')?.before(minimalArchiveBar);
+  archiveTrack.setAttribute('aria-label', `${stats.available.length} zachowanych, ${stats.partial.length} częściowo zachowanych, ${stats.trace.length} śladowo zachowanych, ${stats.minimal.length} ze szczątkowymi danymi, ${stats.lost.length} lost media, ${stats.unknownArchive} bez statusu`);
   const statsPanel = vodSeasonView.querySelector('#vod-season-stats');
   const statsToggle = vodSeasonView.querySelector('[data-vod-stats-toggle]');
   const statsReveal = document.createElement('div');
