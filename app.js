@@ -569,10 +569,10 @@ const vodSeasons = [{
     description: 'Nowy serwer GTA V RP, sprawdzanie strony Towarzysza Twitch i ubieranie postaci. W trakcie pojawiają się też chwile z Forza Horizon 4.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
-      {id:'SplendidArborealPartridgeRuleFive', title:'Egzekucja gangusów', date:'2020-05-27', url:'https://clips.twitch.tv/SplendidArborealPartridgeRuleFive?tt_content=url&tt_medium=clips_api', catalog:true},
-      {id:'SpicyAggressiveGrasshopperOMGScoots', title:'Stachu', date:'2020-05-27', url:'https://clips.twitch.tv/SpicyAggressiveGrasshopperOMGScoots?tt_content=url&tt_medium=clips_api', catalog:true},
-      {id:'TenderAmazingPorpoiseImGlitch', title:'Ubieranie npcta', date:'2020-05-27', url:'https://clips.twitch.tv/TenderAmazingPorpoiseImGlitch?tt_content=url&tt_medium=clips_api', catalog:true},
-      {id:'EasyPatientBasenji4Head', title:'Co daje towarzysz twitch', date:'2020-05-27', url:'https://clips.twitch.tv/EasyPatientBasenji4Head?tt_content=url&tt_medium=clips_api', catalog:true}
+      {id:'SplendidArborealPartridgeRuleFive', title:'Egzekucja gangusów', date:'2020-05-27', url:'https://clips.twitch.tv/SplendidArborealPartridgeRuleFive?tt_content=url&tt_medium=clips_api'},
+      {id:'SpicyAggressiveGrasshopperOMGScoots', title:'Stachu', date:'2020-05-27', url:'https://clips.twitch.tv/SpicyAggressiveGrasshopperOMGScoots?tt_content=url&tt_medium=clips_api'},
+      {id:'TenderAmazingPorpoiseImGlitch', title:'Ubieranie npcta', date:'2020-05-27', url:'https://clips.twitch.tv/TenderAmazingPorpoiseImGlitch?tt_content=url&tt_medium=clips_api'},
+      {id:'EasyPatientBasenji4Head', title:'Co daje towarzysz twitch', date:'2020-05-27', url:'https://clips.twitch.tv/EasyPatientBasenji4Head?tt_content=url&tt_medium=clips_api'}
     ]
   }, {
     slug: 'luzny-strimek-tak-o', title: 'luźny strimek tak o',
@@ -1206,7 +1206,6 @@ function renderClips() {
   if (clipsVisibleCount) clipsVisibleCount.textContent = `${visible} ${visible === 1 ? 'klip' : visible >= 2 && visible <= 4 ? 'klipy' : 'klipów'}`;
 }
 clipsSearch?.addEventListener('input', renderClips);
-populateVodClipsCatalog();
 hydrateClipPreviews(clipsList);
 document.addEventListener('click', event => {
   const card = event.target.closest('[data-clip-id]');
