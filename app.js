@@ -653,7 +653,7 @@ const vodSeasons = [{
   }, {
     slug: 'e-sportowy-sen-part-2', title: 'E-SPORTOWY SEN PART 2',
     startedAt: '2020-06-09', archiveStatus: 'minimal',
-    description: 'Kolejna część e-sportowego snu z rozgrywką w League of Legends. Zachowane klipy pokazują fragment meczu oraz udany dojazd Aurelionem Solem.',
+    description: 'Kolejna część e-sportowego snu z rozgrywką w League of Legends. Zachowane klipy pokazują fragment meczu oraz dojazd gracza.',
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
       {id:'GrossSuperCoyoteFUNgineer', title:'League of Legends rozgrywka', date:'2020-06-09', url:'https://clips.twitch.tv/GrossSuperCoyoteFUNgineer?tt_content=url&tt_medium=clips_api'},
