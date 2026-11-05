@@ -422,17 +422,19 @@ const mediaItems = [
   {src:'./assets/images/media/btkj-gang-bmw-rear.webp', alt:'Zielono-czarne BMW z malowaniem BTKJ Gang widziane od tyłu', title:'BMW BTKJ Gang — tył', created:'24 lutego 2020', datetime:'2020-02-24', dateSearch:'24 lutego 2020 24.02.2020 2020-02-24', tags:'Forza Horizon 4 BTKJ Gang BMW samochód auto tył tapeta', type:'photo', category:'wallpapers', categoryLabel:'Tapety'},
   {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', tags:'Minecraft serwer sezon 1 pierwszy sezon Steve dom', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
   {src:'./assets/images/media/minecraft-expiarka.webp', alt:'Minecraftowa expiarka ze szkła i bloków ziemi na terenie sawanny', title:'Minecraft - Expiarka', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft expiarka pierwszy sezon serwer sawanna szkło', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
-  {src:'./assets/images/media/minecraft-glowny-teren-serwera.webp', alt:'Nocny widok głównego terenu serwera Minecraft z domami i oświetlonym wzgórzem', title:'Minecraft - Główny teren serwera', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft główny teren serwera pierwszy sezon domy noc', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'}
+  {src:'./assets/images/media/minecraft-glowny-teren-serwera.webp', alt:'Nocny widok głównego terenu serwera Minecraft z domami i oświetlonym wzgórzem', title:'Minecraft - Główny teren serwera', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft główny teren serwera pierwszy sezon domy noc', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
+  {src:'./assets/media/stanowisko-crisuuubtkj.mp4', thumbnail:'./assets/images/media/stanowisko-crisuuubtkj.webp', alt:'Stanowisko komputerowe crisuuubtkj z dwoma monitorami i zielonym neonem', title:'Stanowisko crisuuubtkj', created:'Brak daty', datetime:'', dateSearch:'brak daty', tags:'stanowisko crisuuubtkj komputer monitory setup neon', type:'video', category:'workstations', categoryLabel:'Stanowiska'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
 const mediaDialogImage = document.querySelector('#media-lightbox-image');
+const mediaDialogVideo = document.querySelector('#media-lightbox-video');
 const mediaEscape = value => String(value ?? '').replace(/[&<>"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[character]));
 const existingMediaCards = mediaGrid?.querySelectorAll('[data-media-index]').length || 0;
 if (mediaGrid && existingMediaCards < mediaItems.length) {
   mediaGrid.insertAdjacentHTML('beforeend', mediaItems.slice(existingMediaCards).map((item, offset) => {
     const index = existingMediaCards + offset;
-    return `<button class="media-card" type="button" data-media-type="${mediaEscape(item.type)}" data-media-category="${mediaEscape(item.category)}" data-media-index="${index}" aria-label="Otwórz zdjęcie: ${mediaEscape(item.title)}"><img src="${mediaEscape(item.src)}" alt="${mediaEscape(item.alt)}" width="1440" height="900" loading="lazy" decoding="async"><span><small>${mediaEscape(item.categoryLabel).toLocaleUpperCase('pl')}</small><span class="media-card-copy"><strong>${mediaEscape(item.title)}</strong><time datetime="${item.datetime}">${mediaEscape(item.created)}</time></span></span></button>`;
+    return `<button class="media-card" type="button" data-media-type="${mediaEscape(item.type)}" data-media-category="${mediaEscape(item.category)}" data-media-index="${index}" aria-label="Otwórz ${item.type === 'video' ? 'film' : 'zdjęcie'}: ${mediaEscape(item.title)}"><img src="${mediaEscape(item.thumbnail || item.src)}" alt="${mediaEscape(item.alt)}" width="1440" height="900" loading="lazy" decoding="async"><span><small>${mediaEscape(item.categoryLabel).toLocaleUpperCase('pl')}</small><span class="media-card-copy"><strong>${mediaEscape(item.title)}</strong><time${item.datetime ? ` datetime="${item.datetime}"` : ''}>${mediaEscape(item.created)}</time></span></span></button>`;
   }).join(''));
 }
 mediaGrid?.querySelectorAll('[data-media-index]').forEach(card => {
@@ -444,21 +446,36 @@ mediaGrid?.querySelectorAll('[data-media-index]').forEach(card => {
 });
 document.querySelector('[data-media-filter="all"] small').textContent = `${mediaItems.length} plików`;
 document.querySelector('[data-media-filter="photo"] small').textContent = `${mediaItems.filter(item => item.type === 'photo').length} plików`;
+document.querySelector('[data-media-filter="video"] small').textContent = `${mediaItems.filter(item => item.type === 'video').length} plik`;
 document.querySelector('[data-media-category="all"] span').textContent = mediaItems.length;
 document.querySelector('[data-media-category="wallpapers"] span').textContent = mediaItems.filter(item => item.category === 'wallpapers').length;
 document.querySelector('[data-media-category="minecraft-season-1"] span').textContent = mediaItems.filter(item => item.category === 'minecraft-season-1').length;
+document.querySelector('[data-media-category="workstations"] span').textContent = mediaItems.filter(item => item.category === 'workstations').length;
 let activeMediaIndex = 0;
 let mediaFilter = 'all';
 let mediaCategory = 'all';
 function showMediaItem(index) {
   activeMediaIndex = (index + mediaItems.length) % mediaItems.length;
   const item = mediaItems[activeMediaIndex];
-  mediaDialogImage.src = item.src;
-  mediaDialogImage.alt = item.alt;
+  const isVideo = item.type === 'video';
+  mediaDialogImage.hidden = isVideo;
+  mediaDialogVideo.hidden = !isVideo;
+  if (isVideo) {
+    mediaDialogImage.removeAttribute('src');
+    mediaDialogVideo.src = item.src;
+    mediaDialogVideo.poster = item.thumbnail || '';
+  } else {
+    mediaDialogVideo.pause();
+    mediaDialogVideo.removeAttribute('src');
+    mediaDialogImage.src = item.src;
+    mediaDialogImage.alt = item.alt;
+  }
+  mediaDialog.querySelector('figcaption>small').textContent = isVideo ? 'WIDEO' : 'ZDJĘCIE';
   document.querySelector('#media-lightbox-title').textContent = item.title;
   const mediaDate = document.querySelector('#media-lightbox-date');
   mediaDate.textContent = item.created;
-  mediaDate.dateTime = item.datetime;
+  if (item.datetime) mediaDate.dateTime = item.datetime;
+  else mediaDate.removeAttribute('datetime');
   const visibleIndexes = [...mediaGrid.querySelectorAll('[data-media-index]:not([hidden])')].map(card => Number(card.dataset.mediaIndex));
   const visiblePosition = visibleIndexes.indexOf(activeMediaIndex);
   document.querySelector('#media-lightbox-position').textContent = `${visiblePosition + 1} / ${visibleIndexes.length}`;
@@ -483,6 +500,10 @@ function stepVisibleMedia(step) {
   const currentPosition = Math.max(0, visibleIndexes.indexOf(activeMediaIndex));
   showMediaItem(visibleIndexes[(currentPosition + step + visibleIndexes.length) % visibleIndexes.length]);
 }
+mediaDialog?.addEventListener('close', () => {
+  mediaDialogVideo?.pause();
+  mediaDialogVideo?.removeAttribute('src');
+});
 document.querySelector('#media-filters')?.addEventListener('click', event => {
   const button = event.target.closest('[data-media-filter]');
   if (!button) return;
@@ -530,11 +551,11 @@ function renderMediaCatalog() {
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
   const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
-  const categoryLabels = {wallpapers:'Tapety','minecraft-season-1':'Pierwszy sezon Minecraft'};
+  const categoryLabels = {wallpapers:'Tapety','minecraft-season-1':'Pierwszy sezon Minecraft',workstations:'Stanowiska'};
   document.querySelector('#media-group-title').textContent = mediaCategory === 'all' ? labels[mediaFilter] : categoryLabels[mediaCategory];
   document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
-  const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)))].sort();
-  document.querySelector('#media-date-summary').textContent = !visibleItems.length ? 'brak materiałów' : visibleItems.length === 1 ? visibleItems[0].created : visibleYears.length === 1 ? visibleYears[0] : `${visibleYears[0]}–${visibleYears.at(-1)}`;
+  const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)).filter(Boolean))].sort();
+  document.querySelector('#media-date-summary').textContent = !visibleItems.length ? 'brak materiałów' : visibleItems.length === 1 ? visibleItems[0].created : !visibleYears.length ? 'brak dat' : visibleYears.length === 1 ? visibleYears[0] : `${visibleYears[0]}–${visibleYears.at(-1)}`;
 }
 document.querySelector('#media-search')?.addEventListener('input', renderMediaCatalog);
 renderMediaCatalog();
