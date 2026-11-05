@@ -568,7 +568,7 @@ renderMediaCatalog();
 const vodSeasons = [{
   slug: 'prequel', number: 0, title: 'Prequel', platform: 'Twitch',
   description: 'Pierwsze streamy na twitch', startDate: '2020-05-23', endDate: '2020-10-15',
-  knownStreamCount: 10, streams: [{
+  knownStreamCount: 11, streams: [{
     slug: 'wiesiu-paleta-na-rp', title: 'Wiesiu paleta na rp',
     startedAt: '2020-05-23T11:14:00+02:00', endedAt: '2020-05-23T15:20:00+02:00',
     durationMinutes: 250, category: 'games',
@@ -649,6 +649,15 @@ const vodSeasons = [{
     contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
     clips: [
       {id:'GrotesqueTrappedHeronOSsloth', title:'Valorant i dziękowanie za follow', date:'2020-06-04', time:'15:44', url:'https://clips.twitch.tv/GrotesqueTrappedHeronOSsloth?tt_content=url&tt_medium=clips_api'}
+    ]
+  }, {
+    slug: 'e-sportowy-sen-part-2', title: 'E-SPORTOWY SEN PART 2',
+    startedAt: '2020-06-09', archiveStatus: 'minimal',
+    description: 'Kolejna część e-sportowego snu z rozgrywką w League of Legends. Zachowane klipy pokazują fragment meczu oraz udany dojazd Aurelionem Solem.',
+    contentScore: 0, contentNote: 'nic ciekawego', url: '', actors: [],
+    clips: [
+      {id:'GrossSuperCoyoteFUNgineer', title:'League of Legends rozgrywka', date:'2020-06-09', url:'https://clips.twitch.tv/GrossSuperCoyoteFUNgineer?tt_content=url&tt_medium=clips_api'},
+      {id:'StylishResoluteNarwhalMrDestructoid', title:'Dojazd aureliona', date:'2020-06-09', url:'https://clips.twitch.tv/StylishResoluteNarwhalMrDestructoid?tt_content=url&tt_medium=clips_api'}
     ]
   }, {
     slug: 'bardzo-luzny-strimek', title: 'bardzo luźny strimek😋',
