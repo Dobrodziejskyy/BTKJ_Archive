@@ -423,7 +423,7 @@ const mediaItems = [
   {src:'./assets/images/media/minecraft-season-1.webp', alt:'Postać Steve przed drewnianym domem z pierwszego sezonu serwera Minecraft', title:'Minecraft — pierwszy sezon serwera', created:'8 października 2022', datetime:'2022-10-08', dateSearch:'8 października 2022 8.10.2022 08.10.2022 2022-10-08', tags:'Minecraft serwer sezon 1 pierwszy sezon Steve dom', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
   {src:'./assets/images/media/minecraft-expiarka.webp', alt:'Minecraftowa expiarka ze szkła i bloków ziemi na terenie sawanny', title:'Minecraft - Expiarka', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft expiarka pierwszy sezon serwer sawanna szkło', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
   {src:'./assets/images/media/minecraft-glowny-teren-serwera.webp', alt:'Nocny widok głównego terenu serwera Minecraft z domami i oświetlonym wzgórzem', title:'Minecraft - Główny teren serwera', created:'11 października 2022', datetime:'2022-10-11', dateSearch:'11 października 2022 11.10.2022 2022-10-11', tags:'Minecraft główny teren serwera pierwszy sezon domy noc', type:'photo', category:'minecraft-season-1', categoryLabel:'Pierwszy sezon Minecraft'},
-  {src:'./assets/media/stanowisko-crisuuubtkj.mp4', thumbnail:'./assets/images/media/stanowisko-crisuuubtkj.webp', alt:'Stanowisko komputerowe crisuuubtkj z dwoma monitorami i zielonym neonem', title:'Stanowisko crisuuubtkj', created:'Brak daty', datetime:'', dateSearch:'brak daty', tags:'stanowisko crisuuubtkj komputer monitory setup neon', type:'video', category:'workstations', categoryLabel:'Stanowiska'}
+  {src:'./assets/media/stanowisko-crisuuubtkj.mp4', thumbnail:'./assets/images/media/stanowisko-crisuuubtkj.webp', alt:'Stanowisko komputerowe crisuuubtkj z dwoma monitorami i zielonym neonem', title:'Stanowisko crisuuubtkj', created:'Brak daty', datetime:'', dateSearch:'brak daty', tags:'stanowisko crisuuubtkj komputer monitory setup neon odzyskane lost media', type:'video', category:'recovered-lost-media', categoryLabel:'Odzyskane lost media'}
 ];
 const mediaGrid = document.querySelector('#media-grid');
 const mediaDialog = document.querySelector('#media-lightbox');
@@ -450,7 +450,7 @@ document.querySelector('[data-media-filter="video"] small').textContent = `${med
 document.querySelector('[data-media-category="all"] span').textContent = mediaItems.length;
 document.querySelector('[data-media-category="wallpapers"] span').textContent = mediaItems.filter(item => item.category === 'wallpapers').length;
 document.querySelector('[data-media-category="minecraft-season-1"] span').textContent = mediaItems.filter(item => item.category === 'minecraft-season-1').length;
-document.querySelector('[data-media-category="workstations"] span').textContent = mediaItems.filter(item => item.category === 'workstations').length;
+document.querySelector('[data-media-category="recovered-lost-media"] span').textContent = mediaItems.filter(item => item.category === 'recovered-lost-media').length;
 let activeMediaIndex = 0;
 let mediaFilter = 'all';
 let mediaCategory = 'all';
@@ -551,7 +551,7 @@ function renderMediaCatalog() {
   mediaGrid.hidden = visible === 0;
   document.querySelector('#media-empty').hidden = visible !== 0;
   const labels = {all:'Obrazy',video:'Wideo',audio:'Audio',photo:'Obrazy',gif:'GIF-y'};
-  const categoryLabels = {wallpapers:'Tapety','minecraft-season-1':'Pierwszy sezon Minecraft',workstations:'Stanowiska'};
+  const categoryLabels = {wallpapers:'Tapety','minecraft-season-1':'Pierwszy sezon Minecraft','recovered-lost-media':'Odzyskane lost media'};
   document.querySelector('#media-group-title').textContent = mediaCategory === 'all' ? labels[mediaFilter] : categoryLabels[mediaCategory];
   document.querySelector('#media-visible-count').textContent = `${visible} ${visible === 1 ? 'plik' : visible >= 2 && visible <= 4 ? 'pliki' : 'plików'}`;
   const visibleYears = [...new Set(visibleItems.map(item => item.datetime.slice(0,4)).filter(Boolean))].sort();
